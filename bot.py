@@ -1,39 +1,38 @@
 import os
-from os import path
-from datetime import datetime, timedelta
+from os import kill, path
 import discord
 import pickle
 import copy
-import pytz
 import time
 import re
+import psutil
+import subprocess
+import websockets
 from threading import Thread
 from dotenv import load_dotenv
 from pprint import pprint
+
+from websockets.client import WebSocketClientProtocol
 
 
 class PlayBot(discord.Client):
 
     bot_id = 1234567890
     my_id = 1234567890
+    bakkesmod_server = 'ws://127.0.0.1:9002'
+    rcon_password = 'password'
+    token = None
+    rl_path = ""
+
+    rl_pid = None
+    companion_plugin_connected = False
 
     str_pattern = "\'.*?\'|\".*?\"|\(.*?\)|[a-zA-Z\d\_\*\-\\\+\/\[\]\?\!\@\#\$\%\&\=\~\`]+"
     
-    # day * hours * minutes * seconds
-    max_event_time = 14 * 24 * 60 * 60 # 604800s
-
     file = "./bot_stuff.p"
-    save_timer = 15 # how frequently the save file will be written
+    background_timer = 15 # how frequently background tasks will be executed
     permitted_roles = []
-    role_format = "<@&{0}>"
-    threshold = 3
-    pinging = "someone"
     base_command = "!play"
-    formated_prompt_str = "Who wants to join in and play in {0} days, {1}hrs and {2}m?\nWe need {3} or more people to react with {4} to make it happen!\n\n"
-    formated_success_str = "Yo, <@&{0}>! Let's get some games going!"
-    formated_failed_str = "Sorry! Looks like we didn't get enough players for this time."
-    reaction_str = "⚽"
-    running_msgs = []
     roles = []
     
     print_statements = False
@@ -42,15 +41,20 @@ class PlayBot(discord.Client):
 
     def __init__(self, print_statements=False):
         super().__init__()
-        load_dotenv()
+        load_dotenv('./config.env')
         self.pattern = re.compile(self.str_pattern)
         self.bot_id = os.getenv('BOT_ID')
         self.my_id = os.getenv('MY_ID')
+        self.bakkesmod_server = os.getenv('BAKKES_SERVER')
+        self.rcon_password = os.getenv('RCON_PASSWORD')
+        self.rl_path = os.getenv('RL_PATH')
+        self.token = os.getenv('DISCORD_TOKEN')
         self.print_statements = print_statements
 
     def initialize(self):
-        Thread(target=self.__save_loop).start()
-        self.run(os.getenv('DISCORD_TOKEN'))
+        Thread(target=self.__background_loop).start()
+        Thread(target=self.__companion_plugin()).start()
+        self.run(self.token)
 
     def join_bot_thread(self):
         if self.__bot_thread and isinstance(self.__bot_thread, Thread):
@@ -85,148 +89,86 @@ class PlayBot(discord.Client):
                     f'\nRoles in order: {guild.roles}'
                 )
             self.roles.extend(guild.roles)
-        # Setting `Playing ` status
-        # await Playbot.change_presence(self, activity=discord.Game(name="a game"))
-
-        # # Setting `Streaming ` status
-        # await Playbot.change_presence(self, activity=discord.Streaming(name="My Stream", url=my_twitch_url))
-
-        # # Setting `Listening ` status
-        await PlayBot.change_presence(self, activity=discord.Activity(type=discord.ActivityType.listening, name="The beautiful sound of DSL"))
-        # # Setting `Watching ` status
-        # await Playbot.change_presence(self, activity=discord.Activity(type=discord.ActivityType.watching, name="a movie"))
-
+        await PlayBot.change_presence(self, activity=discord.Activity(type=discord.ActivityType.listening, name="others play Rocket League"))
 
     async def on_message(self, message: discord.message.Message):
-        cont = str(message.content)
-        # Here begins a giant ugly list of command checking
-        if message.author.id == self.bot_id or self.base_command not in cont:
+        if message.author.id == self.bot_id or self.base_command not in str(message.content):
             return
         try:
-            argv = self.tokenize(message.content)
-            if argv[0] == self.base_command:
-                if argv[1] == 'help':
-                    await self.help_command(message)
-                elif argv[1] == 'ping':
-                    await self.set_ping_command(message)
-                elif argv[1] == 'permit':
-                    await self.set_permit_command(message)
-                elif argv[1] == 'remove':
-                    await self.remove_permit_command(message)
-                elif argv[1] == 'count':
-                    await self.set_threshold_command(message)
-                elif argv[1] == 'reaction':
-                    await self.set_reaction_command(message)
-                elif cont.startswith(self.base_command):
-                    # This is the main command -> 'd:h:m'
-                    await self.create_reactive_message_command(message)
+           await self.handle_command(self.tokenize(message.content), message)
         except Exception as e:
             pass
         self.try_saving()
 
-    async def create_reactive_message_command(self, message: discord.Message):
-        cont = str(message.content)
-        if len(cont.split(' ')) > 1:
-            try:
-                time_str = cont.split(' ')[1]
-                time_split = time_str.split(':')
-                days = 0
-                hrs = 0
-                minutes = int(time_split[0])                    
-                if len(time_split) == 2:
-                    hrs = int(time_split[0])
-                    minutes = int(time_split[1])
-                elif len(time_split) > 2:
-                    days = int(time_split[0])
-                    hrs = int(time_split[1])
-                    minutes = int(time_split[2])
-                now = datetime.now(tz=pytz.timezone(BOT_TIME_ZONE))
-                delta = timedelta(days=days, hours=hrs, minutes=minutes)
-                now = now + delta
-                delay_seconds = int(delta.total_seconds())
-                if delay_seconds > self.max_event_time:
-                    await message.channel.send("Sorry that's too far into the future!\n")
-                    return
-                embed_var = discord.Embed(
-                    title="Let's Play!", 
-                    description=self.formated_prompt_str.format(
-                        delta.days, 
-                        int(delta.seconds / (60 * 60)),
-                        int(delta.seconds / 60) % 60,
-                        self.threshold, 
-                        self.reaction_str))
-                embed_var.add_field(name='Pacific Time', value=now.strftime("%A\n%d/%m/%Y\n%I:%M %p"))
-                now = now.astimezone(tz=pytz.timezone('US/Eastern'))
-                embed_var.add_field(name='Eastern Time', value=now.strftime("%A\n%d/%m/%Y\n%I:%M %p"))
-                now = now.astimezone(tz=pytz.timezone('Europe/Madrid'))
-                embed_var.add_field(name='Central European Time', value=now.strftime("%A\n%d/%m/%Y\n%I:%M %p"))
-
-                self.running_msgs.append(
-                    ReactiveMessage(
-                        message.channel, 
-                        embed_var, 
-                        self.reaction_str, 
-                        self.formated_success_str.format(self.pinging), 
-                        self.formated_failed_str, 
-                        delay_seconds, 
-                        self.threshold
-                    )
-                )
-            except Exception as e:
-                await message.channel.send(
-                    "Sorry I couldn't understand that :(\n" +
-                    "The defualt format is `" + self.base_command + "h:m`. You can use these formats: `d:h:m`, `h:m`, and `m`")
-        else:
-            await message.channel.send("<@" + str(message.author.id) + ">, there should be 2 arguments. EG: `!play 1:00` to play in 1hr")
-
-    async def set_reaction_command(self, message: discord.Message):
-        cont = str(message.content)
-        if message.author.top_role.id in self.permitted_roles:
-            try:
-                temp = cont.replace(self.base_command + ' reaction ', '')
-                await message.add_reaction(temp)
-                self.reaction_str = temp
-            except Exception as e:
-                await message.channel.send("I can't use that emoji :(")
-        else:
-            await self.permission_failure(message)
-
-    async def set_threshold_command(self, message: discord.Message):
-        cont = str(message.content)
-        if message.author.top_role.id in self.permitted_roles:
-            try:
-                self.threshold = int(cont.replace(self.base_command + ' count ', ''))
-                await message.channel.send("I will ping when I see " + str(self.threshold) + " or more players moving forward :)")
-            except Exception as e:
-                await message.channel.send("Sorry I couldn't understand that :(")
-        else:
-            await self.permission_failure(message)
+    async def handle_command(self, argv: list, message: discord.Message):
+        if argv[0] == self.base_command:
+            if argv[1] == 'help':
+                await self.help_command(message)
+            elif argv[1] == 'permit':
+                # if permissions are empty or ...
+                if (not self.permitted_roles) or self.has_permission(message):
+                    await self.set_permit_command(message)
+                else:
+                    await self.permission_failure(message)
+            elif argv[1] == 'remove':
+                if self.has_permission(message):
+                    await self.remove_permit_command(message)
+                else:
+                    await self.permission_failure(message)
+            elif argv[1] == 'startRL':
+                if self.has_permission(message):
+                    await self.start_game()
+                else:
+                    await self.permission_failure(message)
+            elif argv[1] == 'killRL':
+                if self.has_permission(message):
+                    await self.kill_game()
+                else:
+                    await self.permission_failure(message)
+            elif argv[1] == 'console':
+                if self.has_permission(message):
+                    await self.pass_to_console(argv, message)
+                else:
+                    await self.permission_failure(message)
+            elif argv[1] == 'link-plugin':
+                if self.has_permission(message):
+                    self.reconnect = True
+                else:
+                    await self.permission_failure(message)
+            else:
+                await self.help_command(argv, True)
 
     async def remove_permit_command(self, message: discord.Message):
         cont = str(message.content)
-        if message.author.top_role.id in self.permitted_roles:
+        try:
+            role_id = int(cont.replace(self.base_command + ' remove ', ''))
+            self.permitted_roles.pop(self.permitted_roles.index(role_id))
+            await message.channel.send("I will no longer listen to the " + self.get_role(role_id).name +" role")
+        except Exception as e:
+            await message.channel.send("Sorry, I couldn't undersand that")
+
+    async def pass_to_console(self, argv: list, message: discord.message):
+        if self.has_permission(message):
+            command = ""
+            for i in range(2, len(argv)):
+                command += (argv[i] + " ")
             try:
-                role_id = int(cont.replace(self.base_command + ' remove ', ''))
-                self.permitted_roles.pop(self.permitted_roles.index(role_id))
-                await message.channel.send("I will no longer listen to the " + self.get_role(role_id).name +" role")
+                await self.attempt_to_sendRL(command)
             except Exception as e:
-                await message.channel.send("Sorry, I couldn't undersand that")
+                self.print("Command failed")
+                self.print(e)
         else:
             await self.permission_failure(message)
 
     async def set_permit_command(self, message: discord.Message):
-        cont = str(message.content)
-        if (not self.permitted_roles) or message.author.top_role.id in self.permitted_roles or message.author.id == int(self.my_id):
-            try:
-                role_id = int(cont.replace(self.base_command + ' permit ', ''))
-                self.permitted_roles.append(role_id)
-                await message.channel.send("I will listen to the " + self.get_role(role_id).name +" role when they command me to :)")
-            except Exception as e:
-                await message.channel.send("Sorry, I couldn't undersand that")
-        else:
-            await self.permission_failure(message)
+        try:
+            role_id = int(str(message.content).replace(self.base_command + ' permit ', ''))
+            self.permitted_roles.append(role_id)
+            await message.channel.send("I will listen to the " + self.get_role(role_id).name +" role when they command me to :)")
+        except Exception as e:
+            await message.channel.send("Sorry, I couldn't undersand that")
 
-    async def help_command(self, message: discord.Message):
+    async def help_command(self, message: discord.Message, error_response=False):
         desc = (
             self.base_command +
             " ping [role id]\n"+
@@ -251,37 +193,56 @@ class PlayBot(discord.Client):
             "\tget the list of commands"
         )
         embed_var = discord.Embed(title="Commands", description=desc)
-        await message.channel.send(embed=embed_var)
+        msg = None
+        if error_response:
+            msg = "Sorry, I didn't understand that :("
+        await message.channel.send(content=msg, embed=embed_var)
 
-    async def set_ping_command(self, message: discord.Message):
-        cont = str(message.content)
-        if message.author.top_role.id in self.permitted_roles:
-            try:
-                self.pinging = int(cont.replace(self.base_command + ' ping ', ''))
-                name = "them"
-                role = self.get_role(self.pinging)
-                if role:
-                    name = role.name
-                await message.channel.send("I will ping " + name +" when the time comes :)")
-            except Exception as e:
-                await message.channel.send("Sorry, I couldn't undersand that")
-        else:
-            await self.permission_failure(message)
+    async def attempt_to_sendRL(self, message: str) -> WebSocketClientProtocol:
+        try:
+            async with websockets.connect(self.bakkesmod_server, timeout=0.3) as websocket:
+                await websocket.send('rcon_password ' + self.rcon_password)
+                auth_status = await websocket.recv()
+                assert auth_status == 'authyes'
+                await websocket.send(message.encode())
+                await websocket.close()
+        except Exception as e:
+            self.print("Failed to connect to RL")
+            return None
 
-    async def on_reaction_add(self, reaction: discord.reaction.Reaction, user: discord.user.User):
-        # Checking reactions
-        message = reaction.message
-        for rmsg in self.running_msgs:
-            if rmsg.is_complete():
-                self.running_msgs.pop(self.running_msgs.index(rmsg))
-            elif (
-                    message.id == rmsg.get_msg().id 
-                    and user.id != self.bot_id
-                    and rmsg.get_threshold() <= reaction.count
-                ):
-                await rmsg.send_success_msg()
-                rmsg.passed_threshold()
-                self.running_msgs.pop(self.running_msgs.index(rmsg))
+    async def start_game(self):
+        """
+        Starts up rocket league exe
+        """
+        self.print("Starting RL")
+        subprocess.Popen(self.rl_path)
+
+    async def kill_game(self):
+        """
+        Finds rocket league and kills the process
+        """
+        self.print("Killing RL")
+        try:
+            for proc in psutil.process_iter():
+                try:
+                    # would need to check others if it wasn't a windows only game
+                    if "RocketLeague.exe" in proc.name():
+                        self.print(["PID found:", proc.pid])
+                        psutil.Process(proc.pid).kill()
+                        self.companion_plugin_connected = False
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    pass
+        except Exception as e:
+            self.print("Failed to kill proces")
+            self.print(e)
+
+    async def restart_game(self):
+        """
+        Simply restarts the game
+        """
+        self.kill_game()
+        time.sleep(1)
+        self.start_game()
 
     async def permission_failure(self, message: discord.Message):
         """
@@ -291,6 +252,42 @@ class PlayBot(discord.Client):
             await message.channel.send("Sorry, you do not have permission <@" + str(message.author.id) + ">")
         else:
             await message.channel.send("Permissions must be set first! <@" + str(message.author.id) + ">")
+
+    async def __companion_plugin(self):
+        """
+        this loop will attempt to remain in contact with the game to get
+        general status updates on the game state
+
+        Returns:
+            **never**
+        """
+        while 1:
+            if self.reconnect:
+                self.print("Attempting to connect to companion plugin")
+                self.reconnect = False
+                try:
+                    async with websockets.connect(self.bakkesmod_server, timeout=3) as websocket:
+                        await websocket.send('rcon_password ' + self.rcon_password)
+                        auth_status = await websocket.recv()
+                        assert auth_status == 'authyes'
+                        # send general check command
+                        await websocket.send()
+                        companion_status = await websocket.recv()
+                        assert companion_status == 'OK'
+                        self.companion_plugin_connected = True
+                        # connection is established
+                        # We'll run this indefinitely basically
+                        while self.companion_plugin_connected:
+                            time.sleep(15)
+                            # query command for info
+                            await websocket.send()
+                            # get back info
+                            game_status = await websocket.recv()
+                            # TODO do stuff with status info
+                except Exception as e:
+                    self.print("Failed to connect to RL")
+                    return None
+            time.sleep(3)
 
     def tokenize(self, line: str):
         """
@@ -322,13 +319,8 @@ class PlayBot(discord.Client):
             if path.exists(self.file):
                 dictionary = pickle.load(open(self.file, 'rb'))
                 self.permitted_roles = dictionary['permitted_roles']
-                self.threshold = dictionary['threshold']
                 self.base_command = dictionary['base_command']
-                self.reaction_str = dictionary['reaction_str']
-                self.pinging = dictionary['pinging']
-                self.running_msgs = [reactive_message_builder(rmsg_dict, self.guilds) for rmsg_dict in dictionary['running_msgs']]
-                self.save_time = dictionary['save_timer']
-                self.max_event_time = dictionary['max_event_time']
+                self.background_timer = dictionary['timer']
                 if self.print_statements:
                     print('File loaded')
                     pprint(dictionary)
@@ -348,24 +340,28 @@ class PlayBot(discord.Client):
             pprint(dictionary)
     
     def get_bot_info(self) -> dict:
-        for rmsg in self.running_msgs:
-            if rmsg.is_complete():
-                self.running_msgs.pop(self.running_msgs.index(rmsg))
         dictionary = {}
         dictionary['permitted_roles'] = copy.deepcopy(self.permitted_roles)
-        dictionary['threshold'] = copy.deepcopy(self.threshold)
         dictionary['base_command'] = copy.deepcopy(self.base_command)
-        dictionary['reaction_str'] = copy.deepcopy(self.reaction_str)
-        dictionary['pinging'] = copy.deepcopy(self.pinging)
-        dictionary['running_msgs'] = copy.deepcopy([rmsg.to_dictionary() for rmsg in self.running_msgs])
-        dictionary['save_timer'] = copy.deepcopy(self.save_timer)
-        dictionary['max_event_time'] = copy.deepcopy(self.max_event_time)
+        dictionary['timer'] = copy.deepcopy(self.background_timer)
         return dictionary
 
-    def __save_loop(self):
+    def __background_loop(self):
         while True:
-            time.sleep(self.save_timer)
+            time.sleep(self.background_timer)
             self.try_saving()
+
+    def has_permission(self, message: discord.message) -> bool:
+        """
+        Helper funciton that checks if this message is from a permited role/person
+
+        Args:
+            message (discord.message): the discord message in question
+
+        Returns:
+            bool: true for valid / false for unrecoginzed
+        """
+        return message.author.top_role.id in self.permitted_roles or message.author.id == int(self.my_id)
 
     def get_role(self, id: int) -> discord.Role:
         """
@@ -382,12 +378,17 @@ class PlayBot(discord.Client):
                 return role
         return None
 
+    def print(self, message):
+        if self.print_statements:
+            print(message)
+
     def __del__(self):
         self.try_saving()
 
 
 def main():
     bot = PlayBot(print_statements=True)
+    bot.initialize()
     
 if __name__ == "__main__":
     main()
