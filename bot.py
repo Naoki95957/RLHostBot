@@ -174,24 +174,6 @@ class PlayBot(discord.Client):
     async def help_command(self, message: discord.Message, error_response=False):
         desc = (
             self.base_command +
-            " ping [role id]\n"+
-            "\tsets which role will be pinged\n\n"+
-            self.base_command +
-            " count [integer]\n"+
-            "\tsets how many players will be needed to make a ping\n\n"+
-            self.base_command +
-            " permit [role id]\n"+
-            "\tsets which roles can control my settings\n\n"+
-            self.base_command +
-            " remove [role id]\n"+
-            "\tremoves which roles can control my settings\n\n"+
-            self.base_command +
-            " reaction [emoji]\n"+
-            "\tsets which emoji will used\n\n"+
-            self.base_command +
-            " [d:h:m]\n"+
-            "\tschedules an event 'd:h:m' time from now and if enough players wanna join in, it'll ping! Formats are: `d:h:m`, `h:m`, and `m`\n\n"+
-            self.base_command +
             " help\n"+
             "\tget the list of commands"
         )
@@ -292,7 +274,6 @@ class PlayBot(discord.Client):
                             await websocket.send('hcp status')
                             # get back info
                             game_status = await websocket.recv()
-                            game_status = game_status.replace("$%", "\"")
                             if (game_status != "ERR"):
                                 test = json.loads(str(game_status))
                                 self.print("current match data:")
