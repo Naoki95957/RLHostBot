@@ -21,8 +21,8 @@ class PlayBot(discord.Client):
 
     bot_id = 1234567890
     my_id = 1234567890
-    bakkesmod_server = 'ws://127.0.0.1:9002'
-    rcon_password = 'password'
+    bakkesmod_server = ''
+    rcon_password = ''
     token = None
     rl_path = ""
 
