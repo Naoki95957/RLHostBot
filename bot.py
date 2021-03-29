@@ -1,8 +1,10 @@
 import os
 from os import kill, path
+import asyncio
 import discord
 import pickle
 import copy
+import json
 import time
 import re
 import psutil
@@ -26,6 +28,7 @@ class PlayBot(discord.Client):
 
     rl_pid = None
     companion_plugin_connected = False
+    reconnect = False;
 
     str_pattern = "\'.*?\'|\".*?\"|\(.*?\)|[a-zA-Z\d\_\*\-\\\+\/\[\]\?\!\@\#\$\%\&\=\~\`]+"
     
@@ -53,7 +56,7 @@ class PlayBot(discord.Client):
 
     def initialize(self):
         Thread(target=self.__background_loop).start()
-        Thread(target=self.__companion_plugin()).start()
+        Thread(target=self.between_plugin_callback).start()
         self.run(self.token)
 
     def join_bot_thread(self):
@@ -253,6 +256,13 @@ class PlayBot(discord.Client):
         else:
             await message.channel.send("Permissions must be set first! <@" + str(message.author.id) + ">")
 
+    def between_plugin_callback(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        loop.run_until_complete(self.__companion_plugin())
+        loop.close()
+   
     async def __companion_plugin(self):
         """
         this loop will attempt to remain in contact with the game to get
@@ -271,23 +281,31 @@ class PlayBot(discord.Client):
                         auth_status = await websocket.recv()
                         assert auth_status == 'authyes'
                         # send general check command
-                        await websocket.send()
+                        await websocket.send('hcp')
                         companion_status = await websocket.recv()
                         assert companion_status == 'OK'
                         self.companion_plugin_connected = True
                         # connection is established
                         # We'll run this indefinitely basically
                         while self.companion_plugin_connected:
-                            time.sleep(15)
                             # query command for info
-                            await websocket.send()
+                            await websocket.send('hcp status')
                             # get back info
                             game_status = await websocket.recv()
-                            # TODO do stuff with status info
+                            game_status = game_status.replace("$%", "\"")
+                            if (game_status != "ERR"):
+                                test = json.loads(str(game_status))
+                                self.print("current match data:")
+                                self.print(test)
+                                # TODO do stuff with status info
+                            else:
+                                # not in game
+                                # update status
+                                pass
+                            time.sleep(15)
                 except Exception as e:
                     self.print("Failed to connect to RL")
-                    return None
-            time.sleep(3)
+            time.sleep(5)
 
     def tokenize(self, line: str):
         """
@@ -340,6 +358,12 @@ class PlayBot(discord.Client):
             pprint(dictionary)
     
     def get_bot_info(self) -> dict:
+        """
+        Helper used to get data prepped for serialization
+
+        Returns:
+            dict: important bits of object data
+        """
         dictionary = {}
         dictionary['permitted_roles'] = copy.deepcopy(self.permitted_roles)
         dictionary['base_command'] = copy.deepcopy(self.base_command)
