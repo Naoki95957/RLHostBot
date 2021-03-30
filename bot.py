@@ -51,6 +51,7 @@ class PlayBot(discord.Client):
     background_timer = 15 # how frequently background tasks will be executed
     permitted_roles = []
     base_command = "!host"
+    listening_channels = []
     # used to display score info in discord :)
     binded_message = None
     binded_message_ID = None
@@ -140,108 +141,123 @@ class PlayBot(discord.Client):
         self.try_saving()
 
     async def handle_command(self, argv: list, message: discord.Message):
-        if argv[0] == self.base_command:
-            # help command
-            if argv[1] == 'help':
-                await self.help_command(message)
-            # allows user to add roles that bot will listen to
-            elif argv[1] == 'permit':
-                # if permissions are empty or ...
-                if (not self.permitted_roles) or self.has_permission(message):
-                    await self.set_permit_command(message)
+        if message.channel.id in self.listening_channels or message.author.id == self.my_id:
+            if argv[0] == self.base_command:
+                # help command
+                if argv[1] == 'help':
+                    await self.help_command(message)
+                # allows user to add roles that bot will listen to
+                elif argv[1] == 'permit':
+                    # if permissions are empty or ...
+                    if (not self.permitted_roles) or self.has_permission(message):
+                        await self.set_permit_command(message)
+                    else:
+                        await self.permission_failure(message)
+                # add channel for bot to listen to
+                elif argv[1] == 'addchannel':
+                    if (not self.listening_channels) or self.has_permission(message):
+                        self.listening_channels.append(message.channel.id)
+                        await message.channel.send("Added channel")
+                    else:
+                        await self.permission_failure(message)
+                # remove channel for bot to listen to
+                elif argv[1] == 'removechannel':
+                    if (self.listening_channels) or self.has_permission(message):
+                        self.listening_channels.remove(message.channel.id)
+                        await message.channel.send("Removed channel")
+                    else:
+                        await self.permission_failure(message)
+                # lists maps known to the bot
+                elif argv[1] == 'maps':
+                        await self.list_maps(message)
+                # reloads bot's index (not rl's)
+                elif argv[1] == 'reload-maps':
+                    if self.has_permission(message):
+                        await self.index_custom_maps()
+                    else:
+                        await self.permission_failure(message)
+                # removes a role from permissions
+                elif argv[1] == 'demote':
+                    if self.has_permission(message):
+                        await self.remove_permit_command(message)
+                    else:
+                        await self.permission_failure(message)
+                elif argv[1] == 'bind':
+                    if self.has_permission(message):
+                        await self.bind_message(message)
+                    else:
+                        await self.permission_failure(message)
+                elif argv[1] == 'unbind':
+                    if self.has_permission(message):
+                        self.binded_message = None
+                        self.binded_message_channel = None
+                        self.binded_message_ID = None
+                    else:
+                        await self.permission_failure(message)
+                # automatically does some of the start up sequence
+                elif argv[1] == 'starthosting':
+                    if self.has_permission(message):
+                        await self.start_game()
+                        time.sleep(15)
+                        # TODO may not need to do this if I publish my plugin
+                        # will need to rename the plugin for sure lol
+                        await self.attempt_to_sendRL("plugin load plugin2")
+                        time.sleep(1)
+                        await self.attempt_to_sendRL("hcp start_rp")
+                        time.sleep(1)
+                        await self.attempt_to_sendRL("rp_custom_path " + self.custom_path.replace("\\", "/"))
+                        time.sleep(1)
+                        self.reconnect = True
+                    else:
+                        await self.permission_failure(message)
+                # selects the map and send it to rl
+                elif argv[1] == 'map':
+                    if argv[2] in self.custom_map_dictionary.keys():
+                        await self.attempt_to_sendRL("rp map " + argv[2])
+                    else:
+                        await message.channel.send("I couldn't find that map :(")
+                # selects the map and send it to rl
+                # TODO if users are in game check if
+                # you are sure you want to do this
+                elif argv[1] == 'host':
+                    await self.attempt_to_sendRL("rp host")
+                # sends map (full path) to rl
+                elif argv[1] == 'mapd':
+                        await self.attempt_to_sendRL("rp mapd " + argv[2])
+                # script that restarts rl
+                elif argv[1] == 'restartRL':
+                    if self.has_permission(message):
+                        await self.kill_game()
+                        time.sleep(1)
+                        await self.start_game()
+                    else:
+                        await self.permission_failure(message)
+                # starts RL
+                elif argv[1] == 'startRL':
+                    if self.has_permission(message):
+                        await self.start_game()
+                    else:
+                        await self.permission_failure(message)
+                # kills/closes RL
+                elif argv[1] == 'killRL':
+                    if self.has_permission(message):
+                        await self.kill_game()
+                    else:
+                        await self.permission_failure(message)
+                # allows one to access bakkesconsole
+                elif argv[1] == 'console':
+                    if self.has_permission(message):
+                        await self.pass_to_console(argv, message)
+                    else:
+                        await self.permission_failure(message)
+                # link companion plugin for info
+                elif argv[1] == 'link-plugin':
+                    if self.has_permission(message):
+                        self.reconnect = True
+                    else:
+                        await self.permission_failure(message)
                 else:
-                    await self.permission_failure(message)
-            # lists maps known to the bot
-            elif argv[1] == 'maps':
-                    await self.list_maps(message)
-            # reloads bot's index (not rl's)
-            elif argv[1] == 'reload-maps':
-                if self.has_permission(message):
-                    await self.index_custom_maps()
-                else:
-                    await self.permission_failure(message)
-            # removes a role from permissions
-            elif argv[1] == 'demote':
-                if self.has_permission(message):
-                    await self.remove_permit_command(message)
-                else:
-                    await self.permission_failure(message)
-            elif argv[1] == 'bind':
-                if self.has_permission(message):
-                    await self.bind_message(message)
-                else:
-                    await self.permission_failure(message)
-            elif argv[1] == 'unbind':
-                if self.has_permission(message):
-                    self.binded_message = None
-                    self.binded_message_channel = None
-                    self.binded_message_ID = None
-                else:
-                    await self.permission_failure(message)
-            # automatically does some of the start up sequence
-            elif argv[1] == 'starthosting':
-                if self.has_permission(message):
-                    await self.start_game()
-                    time.sleep(15)
-                    # TODO may not need to do this if I publish my plugin
-                    # will need to rename the plugin for sure lol
-                    await self.attempt_to_sendRL("plugin load plugin2")
-                    time.sleep(1)
-                    await self.attempt_to_sendRL("hcp start_rp")
-                    time.sleep(1)
-                    await self.attempt_to_sendRL("rp_custom_path " + self.custom_path.replace("\\", "/"))
-                    time.sleep(1)
-                    self.reconnect = True
-                else:
-                    await self.permission_failure(message)
-            # selects the map and send it to rl
-            elif argv[1] == 'map':
-                if argv[2] in self.custom_map_dictionary.keys():
-                    await self.attempt_to_sendRL("rp map " + argv[2])
-                else:
-                    await message.channel.send("I couldn't find that map :(")
-            # selects the map and send it to rl
-            # TODO if users are in game check if
-            # you are sure you want to do this
-            elif argv[1] == 'host':
-                await self.attempt_to_sendRL("rp host")
-            # sends map (full path) to rl
-            elif argv[1] == 'mapd':
-                    await self.attempt_to_sendRL("rp mapd " + argv[2])
-            # script that restarts rl
-            elif argv[1] == 'restartRL':
-                if self.has_permission(message):
-                    await self.kill_game()
-                    time.sleep(1)
-                    await self.start_game()
-                else:
-                    await self.permission_failure(message)
-            # starts RL
-            elif argv[1] == 'startRL':
-                if self.has_permission(message):
-                    await self.start_game()
-                else:
-                    await self.permission_failure(message)
-            # kills/closes RL
-            elif argv[1] == 'killRL':
-                if self.has_permission(message):
-                    await self.kill_game()
-                else:
-                    await self.permission_failure(message)
-            # allows one to access bakkesconsole
-            elif argv[1] == 'console':
-                if self.has_permission(message):
-                    await self.pass_to_console(argv, message)
-                else:
-                    await self.permission_failure(message)
-            # link companion plugin for info
-            elif argv[1] == 'link-plugin':
-                if self.has_permission(message):
-                    self.reconnect = True
-                else:
-                    await self.permission_failure(message)
-            else:
-                await self.help_command(argv, True)
+                    await self.help_command(argv, True)
 
     async def list_maps(self, message: discord.Message):
         try:
@@ -521,6 +537,7 @@ class PlayBot(discord.Client):
                 self.background_timer = dictionary['timer']
                 self.binded_message_ID = dictionary['bindID']
                 self.binded_message_channel = dictionary['bindChannel']
+                self.listening_channels = dictionary['listeningChannels']
                 if self.print_statements:
                     print('File loaded')
                     pprint(dictionary)
@@ -552,6 +569,7 @@ class PlayBot(discord.Client):
         dictionary['timer'] = copy.deepcopy(self.background_timer)
         dictionary['bindID'] = copy.deepcopy(self.binded_message_ID)
         dictionary['bindChannel'] = copy.deepcopy(self.binded_message_channel)
+        dictionary['listeningChannels'] = copy.deepcopy(self.listening_channels)
         return dictionary
 
     def __background_loop(self):
