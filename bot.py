@@ -363,10 +363,71 @@ class PlayBot(discord.Client):
     async def help_command(self, message: discord.Message, error_response=False):
         desc = (
             self.base_command +
+            " addchannel*\n"+
+            "\tListen to a channel:\n\tArgs: [channel id]\n\n"+
+            self.base_command +
+            " bind*\n"+
+            "\tBind scoreboard to this channel:\n\tArgs: None\n\n"+
+            self.base_command +
+            " console*\n"+
+            "\tPass arguments directly to game console:\n\tArgs: [...]\n\n"+
+            self.base_command +
+            " demote*\n"+
+            "\tRemove a role from permissions:\n\tArgs: [role id]\n\n"+
+            self.base_command +
+            " host\n"+
+            "\tStart up a game!:\n\tArgs: None\n\n"+
+            self.base_command +
+            " killRL*\n"+
+            "\tTerminates rocket league:\n\tArgs: None\n\n"+
+            self.base_command +
+            " link-plugin*\n"+
+            "\tAttempts to start communication with custom plugin:\n\tArgs: None\n\n"+
+            self.base_command +
+            " map\n"+
+            "\tPicks map to be hosted:\n\tArgs: [name of map (if there is a gap use qoutes)]\n\n"+
+            self.base_command +
+            " mapd*\n"+
+            "\tLoad map from directory listing:\n\tArgs: [full path of map]\n\n"+
+            self.base_command +
+            " maps\n"+
+            "\tList all the availble maps:\n\tArgs: None\n\n"+
+            self.base_command +
+            " mutator\n"+
+            "\tEdit availible mutators:\n\tArgs: [category][setting]\n\t(if this is confusing hit F6 and follow instructions on `rp mutator`)\n\n"+
+            self.base_command +
+            " permit*\n"+
+            "\tAdds a role to permssions:\n\tArgs: [role id]\n\n"+
+            self.base_command +
+            " preset\n"+
+            "\tLoad in a predefined preset:\n\tArgs: [name of preset (case sensitve)]\n\n"+
+            self.base_command +
+            " reload-maps*\n"+
+            "\tRe-indexes known maps (just the bot):\n\tArgs: None\n\n"+
+            self.base_command +
+            " removechannel*\n"+
+            "\tStops listening to the channel:\n\tArgs: [channel id]\n\n"+
+            self.base_command +
+            " restart*\n"+
+            "\tRestarts rocket league and reloads plugins:\n\tArgs: None\n\n"+
+            self.base_command +
+            " restartRL*\n"+
+            "\tOnly restarts the rocket league application:\n\tArgs: None\n\n"+
+            self.base_command +
+            " startRL*\n"+
+            "\tOnly starts up rocket league application:\n\tArgs: None\n\n"+
+            self.base_command +
+            " starthosting*\n"+
+            "\tStarts application and loads plugins:\n\tArgs: None\n\n"+
+            self.base_command +
+            " unbind*\n"+
+            "\tUnbinds 'scoreboard' message:\n\tArgs: None\n\n"+
+            self.base_command +
             " help\n"+
-            "\tget the list of commands"
+            "\tPrints list of commands:\n\tArgs: None\n\n"
         )
         embed_var = discord.Embed(title="Commands", description=desc)
+        embed_var.add_field(name="commands with a *", value="can only be executed by those with permissions", inline=False)
         msg = None
         if error_response:
             msg = "Sorry, I didn't understand that :("
