@@ -480,6 +480,9 @@ class PlayBot(discord.Client):
             " restartRL*\n"+
             "\tOnly restarts the rocket league application:\n\tArgs: None\n\n"+
             self.base_command +
+            " setIP*\n"+
+            "\tSets the IP to be reported:\n\tArgs: [ip address]\n\n"+
+            self.base_command +
             " startRL*\n"+
             "\tOnly starts up rocket league application:\n\tArgs: None\n\n"+
             self.base_command +
