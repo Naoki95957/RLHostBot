@@ -259,7 +259,10 @@ class PlayBot(discord.Client):
                 # you are sure you want to do this
                 elif argv[1] == 'host':
                     await self.attempt_to_sendRL("rp host")
-                    await message.channel.send("Game will attempt to host")
+                    message = await message.channel.send("Game will attempt to host")
+                    time.sleep(15)
+                    if self.match_data:
+                        await message.edit(content="Match is online")
                 # sends map (full path) to rl
                 elif argv[1] == 'mapd':
                         await self.attempt_to_sendRL("rp mapd " + argv[2])
