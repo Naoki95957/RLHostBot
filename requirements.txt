@@ -1,2 +1,4 @@
 discord
-dotenv
+python-dotenv
+psutil
+websockets

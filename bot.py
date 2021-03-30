@@ -141,7 +141,7 @@ class PlayBot(discord.Client):
         self.try_saving()
 
     async def handle_command(self, argv: list, message: discord.Message):
-        if message.channel.id in self.listening_channels or message.author.id == self.my_id:
+        if message.channel.id in self.listening_channels or message.author.id == int(self.my_id):
             if argv[0] == self.base_command:
                 # help command
                 if argv[1] == 'help':
