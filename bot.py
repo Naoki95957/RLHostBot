@@ -247,17 +247,23 @@ class PlayBot(discord.Client):
                         await message.edit(content="Done")
                 # mutator passing
                 elif argv[1] == 'mutator':
-                    try:
-                        await self.handle_mutators(argv, message)
-                    except Exception as e:
-                        await message.channel.send("Sorry I didn't understand that")
+                    if not self.companion_plugin_connected:
+                        await message.channel.send("RL is not running")
+                    else:
+                        try:
+                            await self.handle_mutators(argv, message)
+                        except Exception as e:
+                            await message.channel.send("Sorry I didn't understand that")
                 # preset passing
                 elif argv[1] == 'preset':
-                    try:
-                        await self.attempt_to_sendRL("rp preset " + argv[2])
-                        await message.channel.send("preset sent")
-                    except Exception as e:
-                        await message.channel.send("Sorry I didn't understand that")
+                    if not self.companion_plugin_connected:
+                        await message.channel.send("RL is not running")
+                    else:
+                        try:
+                            await self.attempt_to_sendRL("rp preset " + argv[2])
+                            await message.channel.send("preset sent")
+                        except Exception as e:
+                            await message.channel.send("Sorry I didn't understand that")
                 # selects the map and send it to rl
                 elif argv[1] == 'restart':
                     if self.has_permission(message):
@@ -280,24 +286,30 @@ class PlayBot(discord.Client):
                         await self.permission_failure(message)
                 # selects the map and send it to rl
                 elif argv[1] == 'map':
-                    if argv[2] in self.custom_map_dictionary.keys():
-                        await self.attempt_to_sendRL("rp map " + argv[2])
-                        await message.channel.send("Sent map to game")
+                    if not self.companion_plugin_connected:
+                        await message.channel.send("RL is not running")
                     else:
-                        await message.channel.send("I couldn't find that map :(")
+                        if argv[2] in self.custom_map_dictionary.keys():
+                            await self.attempt_to_sendRL("rp map " + argv[2])
+                            await message.channel.send("Sent map to game")
+                        else:
+                            await message.channel.send("I couldn't find that map :(")
                 # selects the map and send it to rl
                 # TODO if users are in game check if
                 # you are sure you want to do this
                 elif argv[1] == 'host':
-                    await self.attempt_to_sendRL("rp host")
-                    message = await message.channel.send("Game will attempt to host...")
-                    time.sleep(15)
-                    if self.match_data:
-                        await message.edit(
-                            content = "Match is online\nIP:" +
-                            self.ip_address + "\n" +
-                            self.game_password
-                        )
+                    if not self.companion_plugin_connected:
+                        await message.channel.send("RL is not running")
+                    else:
+                        await self.attempt_to_sendRL("rp host")
+                        message = await message.channel.send("Game will attempt to host...")
+                        time.sleep(15)
+                        if self.match_data:
+                            await message.edit(
+                                content = "Match is online\nIP:" +
+                                self.ip_address + "\n" +
+                                self.game_password
+                            )
                 # sends map (full path) to rl
                 elif argv[1] == 'mapd':
                         await self.attempt_to_sendRL("rp mapd " + argv[2])
@@ -327,11 +339,14 @@ class PlayBot(discord.Client):
                         await self.permission_failure(message)
                 # allows one to access bakkesconsole
                 elif argv[1] == 'console':
-                    if self.has_permission(message):
-                        await self.pass_to_console(argv, message)
-                        await message.channel.send("Sent instructions to game")
+                    if not self.companion_plugin_connected:
+                        await message.channel.send("RL is not running")
                     else:
-                        await self.permission_failure(message)
+                        if self.has_permission(message):
+                            await self.pass_to_console(argv, message)
+                            await message.channel.send("Sent instructions to game")
+                        else:
+                            await self.permission_failure(message)
                 # link companion plugin for info
                 elif argv[1] == 'setIP':
                     if self.has_permission(message):
