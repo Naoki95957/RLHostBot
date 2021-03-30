@@ -31,6 +31,35 @@ PLUGIN_FREQUENCY = 5
 # Will always attempt to link the plugin
 ALWAYS_RECONNECT = True
 
+MUTATORS = {
+    "FreePlay" : ["Default", "FreePlay"],
+    "GameTimes" : ["Default", "10Minutes", "20Minutes", "UnlimitedTime"],
+    "GameScores" : ["Default", "Max1", "Max3", "Max5", "Max7", "UnlimitedScore"],
+    "OvertimeRules" : ["Default", "Overtime5MinutesFirstScore", "Overtime5MinutesRandom"],
+    "MaxTimeRules" : ["Default", "MaxTime11Minutes"],
+    "MatchGames" : ["Default", "3Games", "5Games", "7Games"],
+    "GameSpeed" : ["Default", "SloMoGameSpeed", "SloMoDistanceBall"],
+    "BallMaxSpeed" : ["Default", "SlowBall", "FastBall", "SuperFastBall"],
+    "BallType" : ["Default", "Ball_CubeBall", "Ball_Puck", "Ball_BasketBall", "Ball_Haunted", "Ball_BeachBall"],
+    "BallGravity" : ["Default", "LowGravityBall", "HighGravityBall", "SuperGravityBall"],
+    "BallWeight" : ["Default", "LightBall", "HeavyBall", "SuperLightBall", "MagnusBall", "MagnusBeachBall"],
+    "BallScale" : ["Default", "SmallBall", "MediumBall", "BigBall", "GiantBall"],
+    "BallBounciness" : ["Default", "LowBounciness", "HighBounciness", "SuperBounciness"],
+    "MultiBall" : ["Default", "TwoBalls", "FourBalls", "SixBalls"],
+    "Boosters" : ["Default", "NoBooster", "UnlimitedBooster", "SlowRecharge", "RapidRecharge"],
+    "Items" : [
+        "Default", "ItemsMode", "ItemsModeSlow",
+        "ItemsModeBallManipulators", "ItemsModeCarManipulators", "ItemsModeSprings",
+        "ItemsModeSpikes", "ItemsModeRugby", "ItemsModeHauntedBallBeam"],
+    "BoosterStrengths" : ["Default", "BoostMultiplier1_5x", "BoostMultiplier2x", "BoostMultiplier10x"],
+    "Gravity" : ["Default", "LowGravity", "HighGravity", "SuperGravity", "ReverseGravity"],
+    "Demolish" : ["Default", "NoDemolish", "DemolishAll", "AlwaysDemolishOpposing", "AlwaysDemolish"],
+    "RespawnTime" : ["Default", "TwoSecondsRespawn", "OnceSecondRespawn", "DisableGoalDelay"],
+    "BotLoadouts" : ["Default", "RandomizedBotLoadouts"],
+    "AudioRules" : ["Default", "HauntedAudio"],
+    "GameEventRules" : ["Default", "HauntedGameEventRules", "RugbyGameEventRules"]
+}
+
 class PlayBot(discord.Client):
 
     bot_id = 1234567890
@@ -216,8 +245,7 @@ class PlayBot(discord.Client):
                 # mutator passing
                 elif argv[1] == 'mutator':
                     try:
-                        await self.attempt_to_sendRL("rp mutator " + argv[2] + " " + argv[3])
-                        await message.channel.send("Mutator sent")
+                        await self.handle_mutators(argv, message)
                     except Exception as e:
                         await message.channel.send("Sorry I didn't understand that")
                 # preset passing
@@ -306,6 +334,28 @@ class PlayBot(discord.Client):
                         await self.permission_failure(message)
                 else:
                     await self.help_command(argv, True)
+
+    async def handle_mutators(self, argv: list, message: discord.Message):
+        if len(argv) > 2:
+            for key in MUTATORS.keys():
+                if argv[2].lower() == key.lower():
+                    argv[2] = key
+            if len(argv) > 3 and argv[3].lower() in (string.lower() for string in MUTATORS[argv[2]]):
+                if argv[3].lower() == "default":
+                    await self.attempt_to_sendRL("rp mutator " + argv[2] + " \\\"\\\"")
+                else:
+                    await self.attempt_to_sendRL("rp mutator " + argv[2] + " " + argv[3])
+                await message.channel.send("Mutator sent")
+            else:
+                options = ""
+                for value in MUTATORS[argv[2]]:
+                    options += value + "\n"
+                await message.channel.send("Options for mutator " + argv[2] + " are:\n" + options)
+        else:
+            options = ""
+            for value in MUTATORS.keys():
+                options += value + "\n"
+            await message.channel.send("Availible mutators are:\n" + options)
 
     async def list_maps(self, message: discord.Message):
         try:
