@@ -196,7 +196,7 @@ class PlayBot(discord.Client):
                     else:
                         await self.permission_failure(message)
                 # automatically does some of the start up sequence
-                elif argv[1] == 'starthosting':
+                elif argv[1] == 'start':
                     if self.has_permission(message):
                         message = await message.channel.send("Working on it ...")
                         await self.start_game()
@@ -420,7 +420,7 @@ class PlayBot(discord.Client):
             " startRL*\n"+
             "\tOnly starts up rocket league application:\n\tArgs: None\n\n"+
             self.base_command +
-            " starthosting*\n"+
+            " start*\n"+
             "\tStarts application and loads plugins:\n\tArgs: None\n\n"+
             self.base_command +
             " unbind*\n"+
