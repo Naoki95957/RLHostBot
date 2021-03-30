@@ -226,7 +226,9 @@ class PlayBot(discord.Client):
                         await self.permission_failure(message)
                 # automatically does some of the start up sequence
                 elif argv[1] == 'start':
-                    if self.has_permission(message):
+                    if self.companion_plugin_connected:
+                        message = await message.channel.send("RL is already running")
+                    else:
                         message = await message.channel.send("Working on it ...")
                         await self.start_game()
                         time.sleep(20)
@@ -240,8 +242,6 @@ class PlayBot(discord.Client):
                         time.sleep(1)
                         self.reconnect = True
                         await message.edit(content="Done")
-                    else:
-                        await self.permission_failure(message)
                 # mutator passing
                 elif argv[1] == 'mutator':
                     try:
@@ -470,7 +470,7 @@ class PlayBot(discord.Client):
             " startRL*\n"+
             "\tOnly starts up rocket league application:\n\tArgs: None\n\n"+
             self.base_command +
-            " start*\n"+
+            " start\n"+
             "\tStarts application and loads plugins:\n\tArgs: None\n\n"+
             self.base_command +
             " unbind*\n"+
