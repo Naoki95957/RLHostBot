@@ -376,7 +376,9 @@ class PlayBot(discord.Client):
                 description="Here is a list of all the maps I can host:")
             value_str = ""
             extras = False
-            for map_key in self.custom_map_dictionary.keys():
+            keys = list(self.custom_map_dictionary.keys())
+            keys.sort()
+            for map_key in keys:
                 if len(value_str + map_key + "\n") > 1023:
                     name = "Maps"
                     if extras:
