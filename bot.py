@@ -200,7 +200,7 @@ class PlayBot(discord.Client):
                     if self.has_permission(message):
                         message = await message.channel.send("Working on it ...")
                         await self.start_game()
-                        time.sleep(15)
+                        time.sleep(20)
                         # TODO may not need to do this if I publish my plugin
                         # will need to rename the plugin for sure lol
                         await self.attempt_to_sendRL("plugin load plugin2")
@@ -232,9 +232,9 @@ class PlayBot(discord.Client):
                     if self.has_permission(message):
                         message = await message.channel.send("Working on it ...")
                         await self.kill_game()
-                        time.sleep(1)
+                        time.sleep(5)
                         await self.start_game()
-                        time.sleep(15)
+                        time.sleep(20)
                         # TODO may not need to do this if I publish my plugin
                         # will need to rename the plugin for sure lol
                         await self.attempt_to_sendRL("plugin load plugin2")
