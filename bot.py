@@ -28,6 +28,8 @@ from websockets.client import WebSocketClientProtocol
 
 # how many seconds you would like to get updates
 PLUGIN_FREQUENCY = 5
+# Will always attempt to link the plugin
+ALWAYS_RECONNECT = True
 
 class PlayBot(discord.Client):
 
@@ -454,7 +456,7 @@ class PlayBot(discord.Client):
             **never**
         """
         while 1:
-            if self.reconnect:
+            if self.reconnect or ALWAYS_RECONNECT:
                 self.print("Attempting to connect to companion plugin")
                 self.reconnect = False
                 try:
