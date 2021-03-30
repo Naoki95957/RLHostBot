@@ -69,6 +69,8 @@ class PlayBot(discord.Client):
     token = None
     rl_path = ""
     custom_path = ""
+    ip_address = ""
+    game_password = ""
 
     rl_pid = None
     companion_plugin_connected = False
@@ -105,6 +107,7 @@ class PlayBot(discord.Client):
         self.rl_path = os.getenv('RL_PATH')
         self.custom_path = os.getenv('CUSTOM_PATH')
         self.token = os.getenv('DISCORD_TOKEN')
+        self.game_password = os.getenv('GAME_PASSWORD')
         self.print_statements = print_statements
 
     def initialize(self):
@@ -287,10 +290,14 @@ class PlayBot(discord.Client):
                 # you are sure you want to do this
                 elif argv[1] == 'host':
                     await self.attempt_to_sendRL("rp host")
-                    message = await message.channel.send("Game will attempt to host")
+                    message = await message.channel.send("Game will attempt to host...")
                     time.sleep(15)
                     if self.match_data:
-                        await message.edit(content="Match is online")
+                        await message.edit(
+                            content = "Match is online\nIP:" +
+                            self.ip_address + "\n" +
+                            self.game_password
+                        )
                 # sends map (full path) to rl
                 elif argv[1] == 'mapd':
                         await self.attempt_to_sendRL("rp mapd " + argv[2])
@@ -326,6 +333,12 @@ class PlayBot(discord.Client):
                     else:
                         await self.permission_failure(message)
                 # link companion plugin for info
+                elif argv[1] == 'setIP':
+                    if self.has_permission(message):
+                        self.ip_address = argv[2]
+                        await message.channel.send("IP address is now set up as: " + self.ip_address)
+                    else:
+                        await self.permission_failure(message)
                 elif argv[1] == 'link-plugin':
                     if self.has_permission(message):
                         self.reconnect = True
@@ -700,6 +713,7 @@ class PlayBot(discord.Client):
                 self.binded_message_ID = dictionary['bindID']
                 self.binded_message_channel = dictionary['bindChannel']
                 self.listening_channels = dictionary['listeningChannels']
+                self.ip_address = dictionary['IP_address']
                 if self.print_statements:
                     print('File loaded')
                     pprint(dictionary)
@@ -732,6 +746,7 @@ class PlayBot(discord.Client):
         dictionary['bindID'] = copy.deepcopy(self.binded_message_ID)
         dictionary['bindChannel'] = copy.deepcopy(self.binded_message_channel)
         dictionary['listeningChannels'] = copy.deepcopy(self.listening_channels)
+        dictionary['IP_address'] = copy.deepcopy(self.ip_address)
         return dictionary
 
     def __background_loop(self):
