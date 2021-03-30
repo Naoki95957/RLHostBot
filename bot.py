@@ -387,7 +387,6 @@ class PlayBot(discord.Client):
                     embed_var.add_field(name=name, value=copy.deepcopy(value_str))
                     value_str = ""
                     extras = True
-                value_str += map_key + "\n"
                 # this seems kinda weird but theres a 6k character limit and
                 # I didn't wanna change the logic. My head is already tired
                 if len(embed_var) > 4975:
@@ -396,6 +395,7 @@ class PlayBot(discord.Client):
                         description="Here is a list of all the maps I can host:")
                     value_str = ""
                     extras = False
+                value_str += map_key + "\n"
             embed_var.add_field(name=name, value=copy.deepcopy(value_str))
             await message.channel.send(embed=embed_var)
         except Exception as e:
