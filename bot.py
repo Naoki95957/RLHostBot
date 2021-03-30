@@ -28,6 +28,9 @@ from websockets.client import WebSocketClientProtocol
 
 # how many seconds you would like to get updates
 PLUGIN_FREQUENCY = 5
+# how long game will go to main menu once game is over to avoid long lobby times
+# time would be IDLE_COUNT * PLUGIN_FREQUENCY seconds
+IDLE_COUNT = 60
 # Will always attempt to link the plugin
 ALWAYS_RECONNECT = True
 
@@ -74,7 +77,8 @@ class PlayBot(discord.Client):
 
     rl_pid = None
     companion_plugin_connected = False
-    reconnect = False;
+    reconnect = False
+    idle_counter = 0
 
     str_pattern = "\'.*?\'|\".*?\"|\(.*?\)|[a-zA-Z\d\_\*\-\\\+\/\[\]\?\!\@\#\$\%\&\=\~\`]+"
     
@@ -539,6 +543,11 @@ class PlayBot(discord.Client):
     @tasks.loop(seconds=PLUGIN_FREQUENCY)
     async def update_companion_message(self):
         await self.wait_until_ready()
+        # go to main menu to avoid bugs where in match for super long time
+        if self.idle_counter > IDLE_COUNT:
+            await self.attempt_to_sendRL("hcp menu")
+            self.idle_counter = 0
+        # scoreboard stuff
         if not self.binded_message:
             if self.binded_message_ID and self.binded_message_channel:
                 channel = self.get_channel(self.binded_message_channel)
@@ -558,6 +567,7 @@ class PlayBot(discord.Client):
                 title += " - Over Time"
             if (not self.match_data['gameactive']) and self.match_data['gametime']:
                 title = "Game Over"
+                self.idle_counter += 1
             if self.match_data['unlimited']:
                 match_time = "unlimited"
             if self.match_data['overtime']:
@@ -569,6 +579,13 @@ class PlayBot(discord.Client):
             embed_var.add_field(name="Map:", value=self.match_data['map'])
             embed_var.add_field(name="Match Length:", value=str(match_time), inline=False)
             embed_var.add_field(name="Duration:", value=str(passed_time), inline=False)
+
+            # if someone is in the match
+            if self.match_data['teams'][0]['players'] or self.match_data['teams'][1]['players']:
+                self.idle_counter = 0
+            else:
+                self.idle_counter += 1
+
             team_0 = self.parse_team_info(self.match_data['teams'][0])
             embed_var.add_field(
                 name=team_0[0],
@@ -583,6 +600,7 @@ class PlayBot(discord.Client):
             )
             return embed_var
         else:
+            self.idle_counter = 0
             title = "OFFLINE - No game running currently"
             if self.companion_plugin_connected:
                 title = "ONLINE - No game running currently"
