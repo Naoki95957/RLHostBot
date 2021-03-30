@@ -335,7 +335,7 @@ class PlayBot(discord.Client):
                 # link companion plugin for info
                 elif argv[1] == 'setIP':
                     if self.has_permission(message):
-                        self.ip_address = argv[2]
+                        self.ip_address = str(argv[2]).replace("\"", "")
                         await message.channel.send("IP address is now set up as: " + self.ip_address)
                     else:
                         await self.permission_failure(message)
@@ -451,7 +451,7 @@ class PlayBot(discord.Client):
             "\tAttempts to start communication with custom plugin:\n\tArgs: None\n\n"+
             self.base_command +
             " map\n"+
-            "\tPicks map to be hosted:\n\tArgs: [name of map (if there is a gap use qoutes)]\n\n"+
+            "\tPicks map to be hosted:\n\tArgs: [name of map (if there is a gap use quotes)]\n\n"+
             self.base_command +
             " mapd*\n"+
             "\tLoad map from directory listing:\n\tArgs: [full path of map]\n\n"+
@@ -481,7 +481,7 @@ class PlayBot(discord.Client):
             "\tOnly restarts the rocket league application:\n\tArgs: None\n\n"+
             self.base_command +
             " setIP*\n"+
-            "\tSets the IP to be reported:\n\tArgs: [ip address]\n\n"+
+            "\tSets the IP to be reported:\n\tArgs: [ip address (use double quotes)]\n\n"+
             self.base_command +
             " startRL*\n"+
             "\tOnly starts up rocket league application:\n\tArgs: None\n\n"+
