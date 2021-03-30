@@ -192,11 +192,13 @@ class PlayBot(discord.Client):
                         self.binded_message = None
                         self.binded_message_channel = None
                         self.binded_message_ID = None
+                        await message.channel.send("Binding dropped")
                     else:
                         await self.permission_failure(message)
                 # automatically does some of the start up sequence
                 elif argv[1] == 'starthosting':
                     if self.has_permission(message):
+                        message = await message.channel.send("Working on it ...")
                         await self.start_game()
                         time.sleep(15)
                         # TODO may not need to do this if I publish my plugin
@@ -208,12 +210,33 @@ class PlayBot(discord.Client):
                         await self.attempt_to_sendRL("rp_custom_path " + self.custom_path.replace("\\", "/"))
                         time.sleep(1)
                         self.reconnect = True
+                        await message.edit(content="Done")
+                    else:
+                        await self.permission_failure(message)
+                elif argv[1] == 'restart':
+                    if self.has_permission(message):
+                        message = await message.channel.send("Working on it ...")
+                        await self.kill_game()
+                        time.sleep(1)
+                        await self.start_game()
+                        time.sleep(15)
+                        # TODO may not need to do this if I publish my plugin
+                        # will need to rename the plugin for sure lol
+                        await self.attempt_to_sendRL("plugin load plugin2")
+                        time.sleep(1)
+                        await self.attempt_to_sendRL("hcp start_rp")
+                        time.sleep(1)
+                        await self.attempt_to_sendRL("rp_custom_path " + self.custom_path.replace("\\", "/"))
+                        time.sleep(1)
+                        self.reconnect = True
+                        await message.edit(content="Done")
                     else:
                         await self.permission_failure(message)
                 # selects the map and send it to rl
                 elif argv[1] == 'map':
                     if argv[2] in self.custom_map_dictionary.keys():
                         await self.attempt_to_sendRL("rp map " + argv[2])
+                        await message.channel.send("Sent map to game")
                     else:
                         await message.channel.send("I couldn't find that map :(")
                 # selects the map and send it to rl
@@ -221,39 +244,46 @@ class PlayBot(discord.Client):
                 # you are sure you want to do this
                 elif argv[1] == 'host':
                     await self.attempt_to_sendRL("rp host")
+                    await message.channel.send("Game will attempt to host")
                 # sends map (full path) to rl
                 elif argv[1] == 'mapd':
                         await self.attempt_to_sendRL("rp mapd " + argv[2])
+                        await message.channel.send("Sent map to game")
                 # script that restarts rl
                 elif argv[1] == 'restartRL':
                     if self.has_permission(message):
                         await self.kill_game()
                         time.sleep(1)
                         await self.start_game()
+                        await message.channel.send("Game restarted")
                     else:
                         await self.permission_failure(message)
                 # starts RL
                 elif argv[1] == 'startRL':
                     if self.has_permission(message):
                         await self.start_game()
+                        await message.channel.send("Game started")
                     else:
                         await self.permission_failure(message)
                 # kills/closes RL
                 elif argv[1] == 'killRL':
                     if self.has_permission(message):
                         await self.kill_game()
+                        await message.channel.send("Game killed")
                     else:
                         await self.permission_failure(message)
                 # allows one to access bakkesconsole
                 elif argv[1] == 'console':
                     if self.has_permission(message):
                         await self.pass_to_console(argv, message)
+                        await message.channel.send("Sent instructions to game")
                     else:
                         await self.permission_failure(message)
                 # link companion plugin for info
                 elif argv[1] == 'link-plugin':
                     if self.has_permission(message):
                         self.reconnect = True
+                        await message.channel.send("Will attempt to connect to game")
                     else:
                         await self.permission_failure(message)
                 else:
