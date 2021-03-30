@@ -379,6 +379,7 @@ class PlayBot(discord.Client):
             keys = list(self.custom_map_dictionary.keys())
             keys.sort()
             for map_key in keys:
+                # there is a 1024 char limit on value for embed fields
                 if len(value_str + map_key + "\n") > 1023:
                     name = "Maps"
                     if extras:
@@ -386,8 +387,7 @@ class PlayBot(discord.Client):
                     embed_var.add_field(name=name, value=copy.deepcopy(value_str))
                     value_str = ""
                     extras = True
-                else: 
-                    value_str += map_key + "\n"
+                value_str += map_key + "\n"
                 # this seems kinda weird but theres a 6k character limit and
                 # I didn't wanna change the logic. My head is already tired
                 if len(embed_var) > 4975:
@@ -400,7 +400,6 @@ class PlayBot(discord.Client):
             await message.channel.send(embed=embed_var)
         except Exception as e:
             await message.channel.send("Sorry, I couldn't find the maps :(")
-
     async def remove_permit_command(self, message: discord.Message):
         cont = str(message.content)
         try:
