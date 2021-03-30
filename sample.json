@@ -1,0 +1,29 @@
+{
+    "map": "savetheplanet", 
+    "gameactive": 0,
+    "unlimited": 0, 
+    "overtime": 0,
+    "matchlength": 300,
+    "gametime": 300.0,
+    "teams": [
+        {
+            "name": "Blue", 
+            "score": 0, 
+            "players": []
+        }, 
+        {
+            "name": "Orange", 
+            "score": 0, 
+            "players": [
+                {
+                    "name": "Naoki95957", 
+                    "score": 0, 
+                    "goals": 0, 
+                    "assists": 0, 
+                    "saves": 0, 
+                    "shots": 0
+                }
+            ]
+        }
+    ]
+}

@@ -1,5 +1,9 @@
+from asyncio.tasks import all_tasks
+from datetime import timedelta
+from operator import index
 import os
 from os import kill, path
+from discord.ext import tasks
 import asyncio
 import discord
 import pickle
@@ -16,6 +20,14 @@ from pprint import pprint
 
 from websockets.client import WebSocketClientProtocol
 
+# TODO add proper format help for commands
+# TODO list all commands (in help)
+# TODO show all presets
+# TODO prettier way to handle mutators?
+# TODO playlists? maps + presets?
+
+# how many seconds you would like to get updates
+PLUGIN_FREQUENCY = 5
 
 class PlayBot(discord.Client):
 
@@ -25,6 +37,7 @@ class PlayBot(discord.Client):
     rcon_password = ''
     token = None
     rl_path = ""
+    custom_path = ""
 
     rl_pid = None
     companion_plugin_connected = False
@@ -35,8 +48,15 @@ class PlayBot(discord.Client):
     file = "./bot_stuff.p"
     background_timer = 15 # how frequently background tasks will be executed
     permitted_roles = []
-    base_command = "!play"
+    base_command = "!host"
+    # used to display score info in discord :)
+    binded_message = None
+    binded_message_ID = None
+    binded_message_channel = None
     roles = []
+    custom_map_dictionary = {}
+
+    match_data = {}
     
     print_statements = False
 
@@ -51,17 +71,31 @@ class PlayBot(discord.Client):
         self.bakkesmod_server = os.getenv('BAKKES_SERVER')
         self.rcon_password = os.getenv('RCON_PASSWORD')
         self.rl_path = os.getenv('RL_PATH')
+        self.custom_path = os.getenv('CUSTOM_PATH')
         self.token = os.getenv('DISCORD_TOKEN')
         self.print_statements = print_statements
 
     def initialize(self):
         Thread(target=self.__background_loop).start()
         Thread(target=self.between_plugin_callback).start()
+        self.index_custom_maps()
+        self.update_companion_message.start()
         self.run(self.token)
 
     def join_bot_thread(self):
         if self.__bot_thread and isinstance(self.__bot_thread, Thread):
             self.__bot_thread.join()
+
+    def index_custom_maps(self):
+        """
+        This just indexes custom maps and puts them into a dictionary for future use
+        """
+        map_index = {}
+        for root, dirs, files in os.walk(self.custom_path):
+            for file in files:
+                if file.endswith('.udk'):
+                    map_index[file.replace('.udk', '')] = os.path.join(root, file)
+        self.custom_map_dictionary = map_index
 
     def enable_print_statements(self, val: bool):
         """
@@ -105,34 +139,100 @@ class PlayBot(discord.Client):
 
     async def handle_command(self, argv: list, message: discord.Message):
         if argv[0] == self.base_command:
+            # help command
             if argv[1] == 'help':
                 await self.help_command(message)
+            # allows user to add roles that bot will listen to
             elif argv[1] == 'permit':
                 # if permissions are empty or ...
                 if (not self.permitted_roles) or self.has_permission(message):
                     await self.set_permit_command(message)
                 else:
                     await self.permission_failure(message)
-            elif argv[1] == 'remove':
+            # lists maps known to the bot
+            elif argv[1] == 'maps':
+                    await self.list_maps(message)
+            # reloads bot's index (not rl's)
+            elif argv[1] == 'reload-maps':
+                if self.has_permission(message):
+                    await self.index_custom_maps()
+                else:
+                    await self.permission_failure(message)
+            # removes a role from permissions
+            elif argv[1] == 'demote':
                 if self.has_permission(message):
                     await self.remove_permit_command(message)
                 else:
                     await self.permission_failure(message)
+            elif argv[1] == 'bind':
+                if self.has_permission(message):
+                    await self.bind_message(message)
+                else:
+                    await self.permission_failure(message)
+            elif argv[1] == 'unbind':
+                if self.has_permission(message):
+                    self.binded_message = None
+                    self.binded_message_channel = None
+                    self.binded_message_ID = None
+                else:
+                    await self.permission_failure(message)
+            # automatically does some of the start up sequence
+            elif argv[1] == 'starthosting':
+                if self.has_permission(message):
+                    await self.start_game()
+                    time.sleep(15)
+                    # TODO may not need to do this if I publish my plugin
+                    # will need to rename the plugin for sure lol
+                    await self.attempt_to_sendRL("plugin load plugin2")
+                    time.sleep(1)
+                    await self.attempt_to_sendRL("hcp start_rp")
+                    time.sleep(1)
+                    await self.attempt_to_sendRL("rp_custom_path " + self.custom_path.replace("\\", "/"))
+                    time.sleep(1)
+                    self.reconnect = True
+                else:
+                    await self.permission_failure(message)
+            # selects the map and send it to rl
+            elif argv[1] == 'map':
+                if argv[2] in self.custom_map_dictionary.keys():
+                    await self.attempt_to_sendRL("rp map " + argv[2])
+                else:
+                    await message.channel.send("I couldn't find that map :(")
+            # selects the map and send it to rl
+            # TODO if users are in game check if
+            # you are sure you want to do this
+            elif argv[1] == 'host':
+                await self.attempt_to_sendRL("rp host")
+            # sends map (full path) to rl
+            elif argv[1] == 'mapd':
+                    await self.attempt_to_sendRL("rp mapd " + argv[2])
+            # script that restarts rl
+            elif argv[1] == 'restartRL':
+                if self.has_permission(message):
+                    await self.kill_game()
+                    time.sleep(1)
+                    await self.start_game()
+                else:
+                    await self.permission_failure(message)
+            # starts RL
             elif argv[1] == 'startRL':
                 if self.has_permission(message):
                     await self.start_game()
                 else:
                     await self.permission_failure(message)
+            # kills/closes RL
             elif argv[1] == 'killRL':
                 if self.has_permission(message):
                     await self.kill_game()
                 else:
                     await self.permission_failure(message)
+            # allows one to access bakkesconsole
             elif argv[1] == 'console':
                 if self.has_permission(message):
                     await self.pass_to_console(argv, message)
                 else:
                     await self.permission_failure(message)
+            # link companion plugin for info
             elif argv[1] == 'link-plugin':
                 if self.has_permission(message):
                     self.reconnect = True
@@ -140,6 +240,35 @@ class PlayBot(discord.Client):
                     await self.permission_failure(message)
             else:
                 await self.help_command(argv, True)
+
+    async def list_maps(self, message: discord.Message):
+        try:
+            embed_var = discord.Embed(
+                description="Here is a list of all the maps I can host:")
+            value_str = ""
+            extras = False
+            for map_key in self.custom_map_dictionary.keys():
+                if len(value_str + map_key + "\n") > 1023:
+                    name = "Maps"
+                    if extras:
+                        name = "cont."
+                    embed_var.add_field(name=name, value=copy.deepcopy(value_str))
+                    value_str = ""
+                    extras = True
+                else: 
+                    value_str += map_key + "\n"
+                # this seems kinda weird but theres a 6k character limit and
+                # I didn't wanna change the logic. My head is already tired
+                if len(embed_var) > 4975:
+                    await message.channel.send(embed=embed_var)
+                    embed_var = discord.Embed(
+                        description="Here is a list of all the maps I can host:")
+                    value_str = ""
+                    extras = False
+            embed_var.add_field(name=name, value=copy.deepcopy(value_str))
+            await message.channel.send(embed=embed_var)
+        except Exception as e:
+            await message.channel.send("Sorry, I couldn't find the maps :(")
 
     async def remove_permit_command(self, message: discord.Message):
         cont = str(message.content)
@@ -151,7 +280,6 @@ class PlayBot(discord.Client):
             await message.channel.send("Sorry, I couldn't undersand that")
 
     async def pass_to_console(self, argv: list, message: discord.message):
-        if self.has_permission(message):
             command = ""
             for i in range(2, len(argv)):
                 command += (argv[i] + " ")
@@ -160,8 +288,6 @@ class PlayBot(discord.Client):
             except Exception as e:
                 self.print("Command failed")
                 self.print(e)
-        else:
-            await self.permission_failure(message)
 
     async def set_permit_command(self, message: discord.Message):
         try:
@@ -183,7 +309,7 @@ class PlayBot(discord.Client):
             msg = "Sorry, I didn't understand that :("
         await message.channel.send(content=msg, embed=embed_var)
 
-    async def attempt_to_sendRL(self, message: str) -> WebSocketClientProtocol:
+    async def attempt_to_sendRL(self, message: str):
         try:
             async with websockets.connect(self.bakkesmod_server, timeout=0.3) as websocket:
                 await websocket.send('rcon_password ' + self.rcon_password)
@@ -194,6 +320,81 @@ class PlayBot(discord.Client):
         except Exception as e:
             self.print("Failed to connect to RL")
             return None
+
+    async def bind_message(self, message: discord.Message):
+        self.binded_message = await message.channel.send("Binding...")
+        self.binded_message_ID = self.binded_message.id
+        self.binded_message_channel = self.binded_message.channel.id
+        self.try_saving()
+
+    @tasks.loop(seconds=PLUGIN_FREQUENCY)
+    async def update_companion_message(self):
+        await self.wait_until_ready()
+        if not self.binded_message:
+            if self.binded_message_ID and self.binded_message_channel:
+                channel = self.get_channel(self.binded_message_channel)
+                self.binded_message = await channel.fetch_message(self.binded_message_ID)
+            else:
+                return
+        else:
+            await self.binded_message.edit(content="", embed=self.get_score_embed())
+
+    def get_score_embed(self) -> discord.Embed:
+        if self.match_data:
+            title = "Current Game"
+            match_time = timedelta(seconds=int(self.match_data['matchlength']))
+            passed_time = timedelta(seconds=float(self.match_data['gametime']))
+
+            if self.match_data['overtime']:
+                title += " - Over Time"
+            if (not self.match_data['gameactive']) and self.match_data['gametime']:
+                title = "Game Over"
+            if self.match_data['unlimited']:
+                match_time = "unlimited"
+            if self.match_data['overtime']:
+                passed_time += match_time
+
+            embed_var = discord.Embed(
+                title=title
+            )
+            embed_var.add_field(name="Map:", value=self.match_data['map'])
+            embed_var.add_field(name="Match Length:", value=str(match_time), inline=False)
+            embed_var.add_field(name="Duration:", value=str(passed_time), inline=False)
+            team_0 = self.parse_team_info(self.match_data['teams'][0])
+            embed_var.add_field(
+                name=team_0[0],
+                value=team_0[1], 
+                inline=True
+            )
+            team_1 = self.parse_team_info(self.match_data['teams'][1])
+            embed_var.add_field(
+                name=team_1[0],
+                value=team_1[1], 
+                inline=True
+            )
+            return embed_var
+        else:
+            return discord.Embed(
+                title="No game running currently",
+            )
+
+    def parse_team_info(self, team: dict) -> tuple:
+        title = team['name'] + ' - ' + str(team['score'])
+        players = ""
+        for i in range(0, len(team['players'])):
+            p = team['players'][i]
+            players += (
+                p['name'] +
+                ' Sc-' + str(p['score']) +
+                ' G-' + str(p['goals']) +
+                ' A-' + str(p['assists']) +
+                ' S-' + str(p['saves']) +
+                ' Sh-' + str(p['shots']) 
+                + "\n"
+            )
+        if not players:
+            players = "None"
+        return title, players
 
     async def start_game(self):
         """
@@ -241,7 +442,6 @@ class PlayBot(discord.Client):
     def between_plugin_callback(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-
         loop.run_until_complete(self.__companion_plugin())
         loop.close()
    
@@ -268,24 +468,21 @@ class PlayBot(discord.Client):
                         assert companion_status == 'OK'
                         self.companion_plugin_connected = True
                         # connection is established
-                        # We'll run this indefinitely basically
+                        # We'll basically run this indefinitely
                         while self.companion_plugin_connected:
                             # query command for info
                             await websocket.send('hcp status')
                             # get back info
                             game_status = await websocket.recv()
                             if (game_status != "ERR"):
-                                test = json.loads(str(game_status))
-                                self.print("current match data:")
-                                self.print(test)
-                                # TODO do stuff with status info
+                                self.match_data = copy.deepcopy(json.loads(str(game_status)))
+                                print(self.match_data)
                             else:
-                                # not in game
-                                # update status
-                                pass
-                            time.sleep(15)
+                                self.match_data = {}
+                            time.sleep(PLUGIN_FREQUENCY)
                 except Exception as e:
                     self.print("Failed to connect to RL")
+            self.match_data = {}
             time.sleep(5)
 
     def tokenize(self, line: str):
@@ -320,6 +517,8 @@ class PlayBot(discord.Client):
                 self.permitted_roles = dictionary['permitted_roles']
                 self.base_command = dictionary['base_command']
                 self.background_timer = dictionary['timer']
+                self.binded_message_ID = dictionary['bindID']
+                self.binded_message_channel = dictionary['bindChannel']
                 if self.print_statements:
                     print('File loaded')
                     pprint(dictionary)
@@ -349,6 +548,8 @@ class PlayBot(discord.Client):
         dictionary['permitted_roles'] = copy.deepcopy(self.permitted_roles)
         dictionary['base_command'] = copy.deepcopy(self.base_command)
         dictionary['timer'] = copy.deepcopy(self.background_timer)
+        dictionary['bindID'] = copy.deepcopy(self.binded_message_ID)
+        dictionary['bindChannel'] = copy.deepcopy(self.binded_message_channel)
         return dictionary
 
     def __background_loop(self):
