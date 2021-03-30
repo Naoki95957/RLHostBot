@@ -501,8 +501,11 @@ class PlayBot(discord.Client):
             )
             return embed_var
         else:
+            title = "OFFLINE - No game running currently"
+            if self.companion_plugin_connected:
+                title = "ONLINE - No game running currently"
             return discord.Embed(
-                title="No game running currently",
+                title=title,
             )
 
     def parse_team_info(self, team: dict) -> tuple:
