@@ -213,6 +213,21 @@ class PlayBot(discord.Client):
                         await message.edit(content="Done")
                     else:
                         await self.permission_failure(message)
+                # mutator passing
+                elif argv[1] == 'mutator':
+                    try:
+                        await self.attempt_to_sendRL("rp mutator " + argv[2] + " " + argv[3])
+                        await message.channel.send("Mutator sent")
+                    except Exception as e:
+                        await message.channel.send("Sorry I didn't understand that")
+                # preset passing
+                elif argv[1] == 'preset':
+                    try:
+                        await self.attempt_to_sendRL("rp preset " + argv[2])
+                        await message.channel.send("preset sent")
+                    except Exception as e:
+                        await message.channel.send("Sorry I didn't understand that")
+                # selects the map and send it to rl
                 elif argv[1] == 'restart':
                     if self.has_permission(message):
                         message = await message.channel.send("Working on it ...")
