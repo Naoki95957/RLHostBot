@@ -447,7 +447,7 @@ class PlayBot(discord.Client):
             "\tList all the availble maps:\n\tArgs: None\n\n"+
             self.base_command +
             " mutator\n"+
-            "\tEdit availible mutators:\n\tArgs: [category][setting]\n\t(if this is confusing hit F6 and follow instructions on `rp mutator`)\n\n"+
+            "\tEdit availible mutators:\n\tArgs: [mutator][value]\n\t(if this is confusing hit F6 and follow instructions on `rp mutator`)\n\n"+
             self.base_command +
             " permit*\n"+
             "\tAdds a role to permssions:\n\tArgs: [role id]\n\n"+
