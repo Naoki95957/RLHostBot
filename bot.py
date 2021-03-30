@@ -306,9 +306,9 @@ class PlayBot(discord.Client):
                         time.sleep(15)
                         if self.match_data:
                             await message.edit(
-                                content = "Match is online\nIP:" +
-                                self.ip_address + "\n" +
-                                self.game_password
+                                content = "Match is online\nIP: `" +
+                                self.ip_address + "`\nPass: `" +
+                                self.game_password + "`"
                             )
                 # sends map (full path) to rl
                 elif argv[1] == 'mapd':
