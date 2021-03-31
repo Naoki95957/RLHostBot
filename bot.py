@@ -566,7 +566,7 @@ class PlayBot(discord.Client):
             if self.match_data['overtime']:
                 title += " - Over Time"
             if (not self.match_data['gameactive']) and self.match_data['gametime']:
-                title = "Game Over"
+                title = "Game Inactive"
                 self.idle_counter += 1
             if self.match_data['unlimited']:
                 match_time = "unlimited"
