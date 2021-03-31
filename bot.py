@@ -448,74 +448,100 @@ class PlayBot(discord.Client):
             await message.channel.send("Sorry, I couldn't undersand that")
 
     async def help_command(self, message: discord.Message, error_response=False):
-        desc = (
-            self.base_command +
-            " addchannel*\n"+
-            "\tListen to a channel:\n\tArgs: [channel id]\n\n"+
-            self.base_command +
-            " bind*\n"+
-            "\tBind scoreboard to this channel:\n\tArgs: None\n\n"+
-            self.base_command +
-            " console*\n"+
-            "\tPass arguments directly to game console:\n\tArgs: [...]\n\n"+
-            self.base_command +
-            " demote*\n"+
-            "\tRemove a role from permissions:\n\tArgs: [role id]\n\n"+
-            self.base_command +
-            " host\n"+
-            "\tStart up a game!:\n\tArgs: None\n\n"+
-            self.base_command +
-            " killRL*\n"+
-            "\tTerminates rocket league:\n\tArgs: None\n\n"+
-            self.base_command +
-            " link-plugin*\n"+
-            "\tAttempts to start communication with custom plugin:\n\tArgs: None\n\n"+
-            self.base_command +
-            " map\n"+
-            "\tPicks map to be hosted:\n\tArgs: [name of map (if there is a gap use quotes)]\n\n"+
-            self.base_command +
-            " mapd*\n"+
-            "\tLoad map from directory listing:\n\tArgs: [full path of map]\n\n"+
-            self.base_command +
-            " maps\n"+
-            "\tList all the availble maps:\n\tArgs: None\n\n"+
-            self.base_command +
-            " mutator\n"+
-            "\tEdit availible mutators:\n\tArgs: [mutator][value]\n\t(if this is confusing hit F6 and follow instructions on `rp mutator`)\n\n"+
-            self.base_command +
-            " permit*\n"+
-            "\tAdds a role to permssions:\n\tArgs: [role id]\n\n"+
-            self.base_command +
-            " preset\n"+
-            "\tLoad in a predefined preset:\n\tArgs: [name of preset (case sensitve)]\n\n"+
-            self.base_command +
-            " reload-maps*\n"+
-            "\tRe-indexes known maps (just the bot):\n\tArgs: None\n\n"+
-            self.base_command +
-            " removechannel*\n"+
-            "\tStops listening to the channel:\n\tArgs: [channel id]\n\n"+
-            self.base_command +
-            " restart*\n"+
-            "\tRestarts rocket league and reloads plugins:\n\tArgs: None\n\n"+
-            self.base_command +
-            " restartRL*\n"+
-            "\tOnly restarts the rocket league application:\n\tArgs: None\n\n"+
-            self.base_command +
-            " setIP*\n"+
-            "\tSets the IP to be reported:\n\tArgs: [ip address (use double quotes)]\n\n"+
-            self.base_command +
-            " startRL*\n"+
-            "\tOnly starts up rocket league application:\n\tArgs: None\n\n"+
-            self.base_command +
-            " start\n"+
-            "\tStarts application and loads plugins:\n\tArgs: None\n\n"+
-            self.base_command +
-            " unbind*\n"+
-            "\tUnbinds 'scoreboard' message:\n\tArgs: None\n\n"+
-            self.base_command +
-            " help\n"+
-            "\tPrints list of commands:\n\tArgs: None\n\n"
-        )
+        desc = ""
+        if self.has_permission(message):
+            desc = (
+                self.base_command +
+                " addchannel*\n"+
+                "\tListen to a channel:\n\tArgs: [channel id]\n\n"+
+                self.base_command +
+                " bind*\n"+
+                "\tBind scoreboard to this channel:\n\tArgs: None\n\n"+
+                self.base_command +
+                " console*\n"+
+                "\tPass arguments directly to game console:\n\tArgs: [...]\n\n"+
+                self.base_command +
+                " demote*\n"+
+                "\tRemove a role from permissions:\n\tArgs: [role id]\n\n"+
+                self.base_command +
+                " host\n"+
+                "\tStart up a game!:\n\tArgs: None\n\n"+
+                self.base_command +
+                " killRL*\n"+
+                "\tTerminates rocket league:\n\tArgs: None\n\n"+
+                self.base_command +
+                " link-plugin*\n"+
+                "\tAttempts to start communication with custom plugin:\n\tArgs: None\n\n"+
+                self.base_command +
+                " map\n"+
+                "\tPicks map to be hosted:\n\tArgs: [name of map (if there is a gap use quotes)]\n\n"+
+                self.base_command +
+                " mapd*\n"+
+                "\tLoad map from directory listing:\n\tArgs: [full path of map]\n\n"+
+                self.base_command +
+                " maps\n"+
+                "\tList all the availble maps:\n\tArgs: None\n\n"+
+                self.base_command +
+                " mutator\n"+
+                "\tEdit availible mutators:\n\tArgs: [mutator][value]\n\t(if this is confusing hit F6 and follow instructions on `rp mutator`)\n\n"+
+                self.base_command +
+                " permit*\n"+
+                "\tAdds a role to permssions:\n\tArgs: [role id]\n\n"+
+                self.base_command +
+                " preset\n"+
+                "\tLoad in a predefined preset:\n\tArgs: [name of preset (case sensitve)]\n\n"+
+                self.base_command +
+                " reload-maps*\n"+
+                "\tRe-indexes known maps (just the bot):\n\tArgs: None\n\n"+
+                self.base_command +
+                " removechannel*\n"+
+                "\tStops listening to the channel:\n\tArgs: [channel id]\n\n"+
+                self.base_command +
+                " restart*\n"+
+                "\tRestarts rocket league and reloads plugins:\n\tArgs: None\n\n"+
+                self.base_command +
+                " restartRL*\n"+
+                "\tOnly restarts the rocket league application:\n\tArgs: None\n\n"+
+                self.base_command +
+                " setIP*\n"+
+                "\tSets the IP to be reported:\n\tArgs: [ip address (use double quotes)]\n\n"+
+                self.base_command +
+                " startRL*\n"+
+                "\tOnly starts up rocket league application:\n\tArgs: None\n\n"+
+                self.base_command +
+                " start\n"+
+                "\tStarts application and loads plugins:\n\tArgs: None\n\n"+
+                self.base_command +
+                " unbind*\n"+
+                "\tUnbinds 'scoreboard' message:\n\tArgs: None\n\n"+
+                self.base_command +
+                " help\n"+
+                "\tPrints list of commands:\n\tArgs: None\n\n"
+            )
+        else:
+            desc = (
+                self.base_command +
+                " host\n"+
+                "\tStart up a game!:\n\tArgs: None\n\n"+
+                self.base_command +
+                " map\n"+
+                "\tPicks map to be hosted:\n\tArgs: [name of map (if there is a gap use quotes)]\n\n"+
+                self.base_command +
+                " maps\n"+
+                "\tList all the availble maps:\n\tArgs: None\n\n"+
+                self.base_command +
+                " mutator\n"+
+                "\tEdit availible mutators:\n\tArgs: [mutator][value]\n\t(if this is confusing hit F6 and follow instructions on `rp mutator`)\n\n"+
+                self.base_command +
+                " preset\n"+
+                "\tLoad in a predefined preset:\n\tArgs: [name of preset (case sensitve)]\nWIP\n\n"+
+                self.base_command +
+                " start\n"+
+                "\tStarts application and loads plugins (usefull if a map caused a crash):\n\tArgs: None\n\n"+
+                self.base_command +
+                " help\n"+
+                "\tPrints list of commands:\n\tArgs: None\n\n"
+            )
         embed_var = discord.Embed(title="Commands", description=desc)
         embed_var.add_field(name="commands with a *", value="can only be executed by those with permissions", inline=False)
         msg = None
@@ -792,7 +818,7 @@ class PlayBot(discord.Client):
             time.sleep(self.background_timer)
             self.try_saving()
 
-    def has_permission(self, message: discord.message) -> bool:
+    def has_permission(self, message: discord.Message) -> bool:
         """
         Helper funciton that checks if this message is from a permited role/person
 
