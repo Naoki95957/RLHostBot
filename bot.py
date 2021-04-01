@@ -1,9 +1,6 @@
-from asyncio.tasks import all_tasks
 from datetime import timedelta
-from operator import index
 import os
-from os import kill, path
-from discord import emoji
+from os import path
 from discord.ext import tasks
 import math
 import asyncio
@@ -13,7 +10,6 @@ import copy
 import json
 import time
 import re
-from discord.reaction import Reaction
 import psutil
 import subprocess
 import websockets
@@ -21,8 +17,7 @@ from threading import Thread
 from dotenv import load_dotenv
 from pprint import pprint
 
-from websockets.client import WebSocketClientProtocol
-
+# TODO When calling help, only show what the user has permssion for
 # TODO Voting system in the event users are in a game
 # basically if players are IN the lobby that is currently hosted
 # host will fire up a reaction event with -> 
@@ -34,12 +29,11 @@ from websockets.client import WebSocketClientProtocol
 # TODO show all presets
 # read presets bakkes? or scratch that and make your own?
 # commands:
-# presets
+# list presets
 #   lists aval presets
-# presets show '''
-#   reporting presets back to users would just read back the contents
-# presets '''
-#   sends preset to game
+# TODO
+# Move these into a parallel list under the values
+# say value_names : [...]?
 # TODO playlists? maps + presets?
 # make map + preset, ... ?
 # so make is the command
@@ -457,7 +451,7 @@ class PlayBot(discord.Client):
                     else:
                         await self.permission_failure(message)
                 # lists maps known to the bot
-                elif argv[1] == 'maps':
+                elif argv[1] == 'list-maps':
                         await self.list_maps(message)
                 # reloads bot's index (not rl's)
                 elif argv[1] == 'reload-maps':
@@ -519,7 +513,7 @@ class PlayBot(discord.Client):
                     else:
                         try:
                             await self.attempt_to_sendRL("rp preset " + argv[2])
-                            await message.channel.send("preset sent")
+                            await message.channel.send("Sent preset to game")
                         except Exception as e:
                             await message.channel.send("Sorry I didn't understand that")
                 # selects the map and send it to rl
@@ -856,7 +850,7 @@ class PlayBot(discord.Client):
                 " mapd*\n"+
                 "\tLoad map from directory listing:\n\tArgs: [full path of map]\n\n"+
                 self.base_command +
-                " maps\n"+
+                " list-maps\n"+
                 "\tList all the availble maps:\n\tArgs: None\n\n"+
                 self.base_command +
                 " mutator\n"+
