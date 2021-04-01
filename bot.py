@@ -1,6 +1,7 @@
 from datetime import timedelta
 import os
 from os import path
+from discord import reaction
 from discord.ext import tasks
 import math
 import asyncio
@@ -17,23 +18,12 @@ from threading import Thread
 from dotenv import load_dotenv
 from pprint import pprint
 
-# TODO When calling help, only show what the user has permssion for
-# TODO Voting system in the event users are in a game
-# basically if players are IN the lobby that is currently hosted
-# host will fire up a reaction event with -> 
-# "There are still others playing. Are you sure? need x players to confirm"
-# domain of x will be 2 or greator; x = players / 2
-# TODO optionally lock hosting to permitted roles when called
-# this could be useful for events. If locked they override the 'voting' stuff
 # TODO log scoreboard entries? 
 # TODO show all presets
 # read presets bakkes? or scratch that and make your own?
 # commands:
 # list presets
 #   lists aval presets
-# TODO
-# Move these into a parallel list under the values
-# say value_names : [...]?
 # TODO playlists? maps + presets?
 # make map + preset, ... ?
 # so make is the command
@@ -52,17 +42,29 @@ from pprint import pprint
 # and date is a MMM. dd YYYY of the map -> "Mar. 31st 2021"
 # ... you probably wanna write a isolated script file to do this 
 
+# fix fugly code
+
 # how many seconds you would like to get updates
 PLUGIN_FREQUENCY = 5
+
 # how long game will go to main menu once game is over to avoid long lobby times
 # time would be IDLE_COUNT * PLUGIN_FREQUENCY seconds
 IDLE_COUNT = 60
+
 # Will always attempt to link the plugin
 ALWAYS_RECONNECT = True
+
 # used to divide up the massive amount of mutators into multiple messages
 MUTATOR_MESSAGES = 2
-# "Mutator" : : {"emote" : ":emoji:", "values" : ["value0", "value1", ...], "Default" : "<meaning>"}
-# if default is not present that's because the meaning is literally default
+
+# This is used to let the bot know when is a safe time to call on rcon and bakkes
+# to start injecting.
+# This is also kind of arbitrary since it depends on fast you load the game
+GAME_LOAD_TIME = 20
+
+# TODO Move the 'mutator_value_dictionary' into a parallel list under the values
+# say value_names : [...]?
+# "Mutator" : : {"emote" : ":emoji:", "values" : ["value0", "value1", ...], "value_names" : ["<meaning>", ...]}
 MUTATORS = {
     "FreePlay" : {
         "alt_name" : "Free Play",
@@ -305,6 +307,8 @@ EMOTE_OPTIONS = [
     '🇰', '🇱'
 ]
 
+VOTE_TO_PASS_EMOTE = "🗳️"
+
 class PlayBot(discord.Client):
 
     bot_id = 1234567890
@@ -320,11 +324,15 @@ class PlayBot(discord.Client):
     rl_pid = None
     companion_plugin_connected = False
     reconnect = False
+    players_connected = 0
     idle_counter = 0
+    vote_listing = None
 
     active_mutator_messages = []
     stop_adding_reactions = False
     current_reaction = None
+    admin_locked = False
+    match_request_message = None
 
     str_pattern = "\'.*?\'|\".*?\"|\(.*?\)|[a-zA-Z\d\_\*\-\\\+\/\[\]\?\!\@\#\$\%\&\=\~\`]+"
     
@@ -431,8 +439,7 @@ class PlayBot(discord.Client):
                     await self.help_command(message)
                 # allows user to add roles that bot will listen to
                 elif argv[1] == 'permit':
-                    # if permissions are empty or ...
-                    if (not self.permitted_roles) or self.has_permission(message):
+                    if self.has_permission(message):
                         await self.set_permit_command(message)
                     else:
                         await self.permission_failure(message)
@@ -450,8 +457,25 @@ class PlayBot(discord.Client):
                         await message.channel.send("Removed channel")
                     else:
                         await self.permission_failure(message)
+                # Lock is to allow an admin to use the bot for events etc
+                elif argv[1] == 'lock':
+                    if self.has_permission(message):
+                        self.admin_locked = True
+                        await message.channel.send("Editing commands locked")
+                    else:
+                        await self.permission_failure(message)
+                # unlock reverses the lock -> to allow players to use the bot again
+                elif argv[1] == 'unlock':
+                    if self.has_permission(message):
+                        self.admin_unlocked = False
+                        await message.channel.send("Editing commands unlocked")
+                    else:
+                        await self.permission_failure(message)
                 # lists maps known to the bot
                 elif argv[1] == 'list-maps':
+                    if self.admin_locked:
+                        await message.channel.send("Sorry, the commands are locked right now")
+                    else:
                         await self.list_maps(message)
                 # reloads bot's index (not rl's)
                 elif argv[1] == 'reload-maps':
@@ -481,7 +505,9 @@ class PlayBot(discord.Client):
                 # automatically does some of the start up sequence
                 elif argv[1] == 'start':
                     if self.companion_plugin_connected:
-                        message = await message.channel.send("RL is already running")
+                        await message.channel.send("RL is already running")
+                    elif self.admin_locked:
+                        await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         message = await message.channel.send("Working on it ...")
                         await self.start_game()
@@ -500,6 +526,8 @@ class PlayBot(discord.Client):
                 elif argv[1] == 'mutator':
                     if not self.companion_plugin_connected:
                         await message.channel.send("RL is not running")
+                    elif self.admin_locked:
+                        await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         try:
                             await self.handle_mutators(argv, message.channel)
@@ -510,6 +538,8 @@ class PlayBot(discord.Client):
                 elif argv[1] == 'preset':
                     if not self.companion_plugin_connected:
                         await message.channel.send("RL is not running")
+                    elif self.admin_locked:
+                        await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         try:
                             await self.attempt_to_sendRL("rp preset " + argv[2])
@@ -540,6 +570,8 @@ class PlayBot(discord.Client):
                 elif argv[1] == 'map':
                     if not self.companion_plugin_connected:
                         await message.channel.send("RL is not running")
+                    elif self.admin_locked:
+                        await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         if argv[2] in self.custom_map_dictionary.keys():
                             await self.attempt_to_sendRL("rp map " + argv[2])
@@ -552,16 +584,10 @@ class PlayBot(discord.Client):
                 elif argv[1] == 'host':
                     if not self.companion_plugin_connected:
                         await message.channel.send("RL is not running")
+                    elif self.admin_locked:
+                        await message.channel.send("Sorry, the commands are locked right now")
                     else:
-                        await self.attempt_to_sendRL("rp host")
-                        message = await message.channel.send("Game will attempt to host...")
-                        time.sleep(15)
-                        if self.match_data:
-                            await message.edit(
-                                content = "Match is online!\n"
-                                "IP: ||" + self.ip_address + "||\n"+
-                                "Pass: ||" + self.game_password + "||"
-                            )
+                        await self.attempt_to_host(message.channel)
                 # sends map (full path) to rl
                 elif argv[1] == 'mapd':
                         await self.attempt_to_sendRL("rp mapd " + argv[2])
@@ -614,6 +640,23 @@ class PlayBot(discord.Client):
                         await self.permission_failure(message)
                 else:
                     await self.help_command(argv, True)
+    
+    async def attempt_to_host(self, channel: discord.Channel, bypass=False):
+        if bypass or not self.players_connected:
+            if self.vote_listing:
+                await self.vote_listing[0].delete()
+                self.vote_listing = None
+            await self.attempt_to_sendRL("rp host")
+            self.match_request_message = await channel.send("Game will attempt to host...")
+        else:
+            need_to_pass_vote = max(2, math.ceil(self.players_connected / 2))
+            message = await channel.send(
+                "There are still players in the match!\n" +
+                "Either have all players leave and ask to host again or have " +
+                need_to_pass_vote + " players vote to pass by reacting to this message.")
+            await message.add_reaction(VOTE_TO_PASS_EMOTE)
+            self.vote_listing(message, need_to_pass_vote)
+            
 
     async def handle_mutators(self, argv: list, channel: discord.TextChannel):
         self.stop_adding_reactions = False
@@ -721,39 +764,43 @@ class PlayBot(discord.Client):
         # if bot is tracking messages
         if int(self.bot_id) != user.id:
             self.current_reaction = reaction
-        if self.active_mutator_messages and int(self.bot_id) != user.id:
+        if (self.active_mutator_messages or self.vote_listing)and int(self.bot_id) != user.id:
             # check if reaction is on one of the bots messages
             await self.handle_reaction(reaction)
 
     async def handle_reaction(self, reaction: discord.reaction.Reaction, bypass=False, mutator=None):
-        # we can assume they all require colons bc I only used ones w/ colons
-        # if not you can check for that
-        is_my_message = False
-        for active_message, mutator_category in self.active_mutator_messages:
-            if reaction.message.id == active_message.id:
-                is_my_message = True
-                mutator = mutator_category
-        # this is fine since the reaction is actually
-        # saved in on_reaction_add for earlier anaylsis
-        if is_my_message or bypass:
-            arg = str(reaction)
-            arg2 = None
-            for key in MUTATORS.keys():
-                if arg == MUTATORS[key]['emote']:
-                    arg = key
-                    break
-                elif arg in EMOTE_OPTIONS:
-                    arg2 = MUTATORS[mutator]['values'][EMOTE_OPTIONS.index(arg)]
-                    arg = mutator
-                    break
-            await self.clear_active_messages()
-            # rebuild the command equivalent based on reactions
-            argv = [" ", "mutator"]
-            if arg:
-                argv.append(arg)
-            if arg2:
-                argv.append(arg2)
-            await self.handle_mutators(argv, reaction.message.channel)
+        # check if this is about the host voting
+        if reaction.message.id == self.vote_listing[0].id:
+            if len(reaction.count) >= self.vote_listing[1]:
+                self.attempt_to_host(reaction.message.channel, bypass=True)
+        # otherise it probably about the mutators
+        else:
+            is_my_message = False
+            for active_message, mutator_category in self.active_mutator_messages:
+                if reaction.message.id == active_message.id:
+                    is_my_message = True
+                    mutator = mutator_category
+            # this is fine since the reaction is actually
+            # saved in on_reaction_add for earlier anaylsis
+            if is_my_message or bypass:
+                arg = str(reaction)
+                arg2 = None
+                for key in MUTATORS.keys():
+                    if arg == MUTATORS[key]['emote']:
+                        arg = key
+                        break
+                    elif arg in EMOTE_OPTIONS:
+                        arg2 = MUTATORS[mutator]['values'][EMOTE_OPTIONS.index(arg)]
+                        arg = mutator
+                        break
+                await self.clear_active_messages()
+                # rebuild the command equivalent based on reactions
+                argv = [" ", "mutator"]
+                if arg:
+                    argv.append(arg)
+                if arg2:
+                    argv.append(arg2)
+                await self.handle_mutators(argv, reaction.message.channel)
 
     async def clear_active_messages(self):
         self.stop_adding_reactions = True
@@ -820,7 +867,8 @@ class PlayBot(discord.Client):
 
     async def help_command(self, message: discord.Message, error_response=False):
         desc = ""
-        if self.has_permission(message):
+        has_permission = self.has_permission(message)
+        if has_permission:
             desc = (
                 self.base_command +
                 " addchannel*\n"+
@@ -914,6 +962,8 @@ class PlayBot(discord.Client):
                 "\tPrints list of commands:\n\tArgs: None\n\n"
             )
         embed_var = discord.Embed(title="Commands", description=desc)
+        if self.admin_locked and not has_permission:
+            embed_var.add_field(name="Commands are currently locked", value="You'll need a person with special access to unlock them", inline=False)
         embed_var.add_field(name="commands with a *", value="can only be executed by those with permissions", inline=False)
         msg = None
         if error_response:
@@ -945,6 +995,20 @@ class PlayBot(discord.Client):
         if self.idle_counter > IDLE_COUNT:
             await self.attempt_to_sendRL("hcp menu")
             self.idle_counter = 0
+        # idle counter iterator
+        if self.players_connected == 0:
+            self.idle_counter += 1
+        else:
+            self.idle_counter = 0
+        # updated the host request if it's found and a match is online
+        if self.match_request_message and self.match_data:
+            await self.match_request_message.edit(
+                content = "Match is online!\n" +
+                    "Map: " + self.match_data['map'] + "\n" +
+                    "IP: ||" + self.ip_address + "||\n" +
+                    "Pass: ||" + self.game_password + "||"
+            )
+            self.match_request_message = None
         # scoreboard stuff
         if not self.binded_message:
             if self.binded_message_ID and self.binded_message_channel:
@@ -958,6 +1022,7 @@ class PlayBot(discord.Client):
     def get_score_embed(self) -> discord.Embed:
         if self.match_data:
             title = "Current Game"
+            self.players_connected = len(self.match_data['teams'][0]) + len(self.match_data['teams'][1])
             match_time = timedelta(seconds=int(self.match_data['matchlength']))
             passed_time = timedelta(seconds=float(self.match_data['gametime']))
 
@@ -965,7 +1030,6 @@ class PlayBot(discord.Client):
                 title += " - Over Time"
             if (not self.match_data['gameactive']) and self.match_data['gametime']:
                 title = "Game Inactive"
-                self.idle_counter += 1
             if self.match_data['unlimited']:
                 match_time = "unlimited"
             if self.match_data['overtime']:
@@ -977,12 +1041,6 @@ class PlayBot(discord.Client):
             embed_var.add_field(name="Map:", value=self.match_data['map'])
             embed_var.add_field(name="Match Length:", value=str(match_time), inline=False)
             embed_var.add_field(name="Duration:", value=str(passed_time), inline=False)
-
-            # if someone is in the match
-            if self.match_data['teams'][0]['players'] or self.match_data['teams'][1]['players']:
-                self.idle_counter = 0
-            else:
-                self.idle_counter += 1
 
             team_0 = self.parse_team_info(self.match_data['teams'][0])
             embed_var.add_field(
@@ -999,9 +1057,9 @@ class PlayBot(discord.Client):
             return embed_var
         else:
             self.idle_counter = 0
-            title = "OFFLINE - No game running currently"
+            title = "OFFLINE - Game is not running"
             if self.companion_plugin_connected:
-                title = "ONLINE - No game running currently"
+                title = "ONLINE - In Main Menu"
             return discord.Embed(
                 title=title,
             )
