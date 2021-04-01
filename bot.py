@@ -428,7 +428,8 @@ class PlayBot(discord.Client):
         try:
            await self.handle_command(self.tokenize(message.content), message)
         except Exception as e:
-            await message.channel.send("I didn't understand that")
+            # await message.channel.send("I didn't understand that")
+            pass
         self.try_saving()
 
     async def handle_command(self, argv: list, message: discord.Message):
@@ -654,9 +655,9 @@ class PlayBot(discord.Client):
             message = await channel.send(
                 "There are still players in the match!\n" +
                 "Either have all players leave and ask to host again or have " +
-                need_to_pass_vote + " players vote to pass by reacting to this message.")
+                str(need_to_pass_vote) + " players vote to pass by reacting to this message.")
             await message.add_reaction(VOTE_TO_PASS_EMOTE)
-            self.vote_listing(message, need_to_pass_vote)
+            self.vote_listing = (message, need_to_pass_vote)
             
 
     async def handle_mutators(self, argv: list, channel: discord.TextChannel):
@@ -775,15 +776,15 @@ class PlayBot(discord.Client):
         # if bot is tracking messages
         if int(self.bot_id) != user.id:
             self.current_reaction = reaction
-        if (self.active_mutator_messages or self.vote_listing)and int(self.bot_id) != user.id:
+        if (self.active_mutator_messages or self.vote_listing) and int(self.bot_id) != user.id:
             # check if reaction is on one of the bots messages
             await self.handle_reaction(reaction)
 
     async def handle_reaction(self, reaction: discord.reaction.Reaction, bypass=False, mutator=None):
         # check if this is about the host voting
         if self.vote_listing and reaction.message.id == self.vote_listing[0].id:
-            if len(reaction.count) >= self.vote_listing[1]:
-                self.attempt_to_host(reaction.message.channel, bypass=True)
+            if reaction.count > self.vote_listing[1]:
+                await self.attempt_to_host(reaction.message.channel, bypass=True)
         # otherise it probably about the mutators
         else:
             is_my_message = False
@@ -1026,7 +1027,6 @@ class PlayBot(discord.Client):
         if self.match_request_message and self.match_data:
             await self.match_request_message.edit(
                 content = "Match is online!\n" +
-                    "Map: " + self.match_data['map'] + "\n" +
                     "IP: ||" + self.ip_address + "||\n" +
                     "Pass: ||" + self.game_password + "||"
             )
@@ -1044,7 +1044,7 @@ class PlayBot(discord.Client):
     def get_score_embed(self) -> discord.Embed:
         if self.match_data:
             title = "Current Game"
-            self.players_connected = len(self.match_data['teams'][0]) + len(self.match_data['teams'][1])
+            self.players_connected = len(self.match_data['teams'][0]['players']) + len(self.match_data['teams'][1]['players'])
             match_time = timedelta(seconds=int(self.match_data['matchlength']))
             passed_time = timedelta(seconds=float(self.match_data['gametime']))
 
