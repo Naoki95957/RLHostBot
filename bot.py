@@ -885,7 +885,7 @@ class PlayBot(discord.Client):
                 "\tRemove a role from permissions:\n\tArgs: [role id]\n\n"+
                 self.base_command +
                 " host\n"+
-                "\tStart up a game!:\n\tArgs: None\n\n"+
+                "\tStart up a game! If players are in game it will instead vote:\n\tArgs: None\n\n"+
                 self.base_command +
                 " killRL*\n"+
                 "\tTerminates rocket league:\n\tArgs: None\n\n"+
@@ -906,7 +906,7 @@ class PlayBot(discord.Client):
                 "\tList all the availble maps:\n\tArgs: None\n\n"+
                 self.base_command +
                 " mutator\n"+
-                "\tEdit availible mutators:\n\tArgs: [mutator][value]\n\t(if this is confusing hit F6 and follow instructions on `rp mutator`)\n\n"+
+                "\tSend mutators to the game (text and reaction controlled):\n\tArgs: [mutator][value]\n\n"+
                 self.base_command +
                 " permit*\n"+
                 "\tAdds a role to permssions:\n\tArgs: [role id]\n\n"+
@@ -948,7 +948,7 @@ class PlayBot(discord.Client):
             desc = (
                 self.base_command +
                 " host\n"+
-                "\tStart up a game!:\n\tArgs: None\n\n"+
+                "\tStart up a game! If players are in game it will instead vote:\n\tArgs: None\n\n"+
                 self.base_command +
                 " map\n"+
                 "\tPicks map to be hosted:\n\tArgs: [name of map (if there is a gap use quotes)]\n\n"+
@@ -957,7 +957,7 @@ class PlayBot(discord.Client):
                 "\tList all the availble maps:\n\tArgs: None\n\n"+
                 self.base_command +
                 " mutator\n"+
-                "\tEdit availible mutators:\n\tArgs: [mutator][value]\n\t(if this is confusing hit F6 and follow instructions on `rp mutator`)\n\n"+
+                "\tSend mutators to the game (text and reaction controlled):\n\tArgs: [mutator][value]\n\n"+
                 self.base_command +
                 " preset\n"+
                 "\tLoad in a predefined preset:\n\tArgs: [name of preset (case sensitve)]\nWIP\n\n"+
@@ -972,6 +972,7 @@ class PlayBot(discord.Client):
         if self.admin_locked and not has_permission:
             embed_var.add_field(name="Commands are currently locked", value="You'll need a person with special access to unlock them", inline=False)
         embed_var.add_field(name="commands with a *", value="can only be executed by those with permissions", inline=False)
+        embed_var.add_field(name="ALL COMMAND ARGUMENTS MUST BE SINGLE WORD", value="if there is whitespace, use double qoutes -> \"my arg\"", inline=False)
         msg = None
         if error_response:
             msg = "Sorry, I didn't understand that :("
