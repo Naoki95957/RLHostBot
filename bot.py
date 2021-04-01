@@ -504,9 +504,9 @@ class PlayBot(discord.Client):
                         await message.edit(content="Done")
                 # mutator passing
                 elif argv[1] == 'mutator':
-                    # if not self.companion_plugin_connected:
-                    #     await message.channel.send("RL is not running")
-                    # else:
+                    if not self.companion_plugin_connected:
+                        await message.channel.send("RL is not running")
+                    else:
                         try:
                             await self.handle_mutators(argv, message.channel)
                         except Exception as e:
@@ -665,7 +665,9 @@ class PlayBot(discord.Client):
                 options = ""
                 emoji = 0
                 for value in MUTATORS[argv[2]]['values']:
-                    if value != "Default":
+                    if value == "Default" and "Default" in MUTATORS[argv[2]]:
+                        value = MUTATORS[argv[2]]['Default']
+                    else:
                         value = MUTATOR_VALUE_DICTIONARY[value]
                     options += EMOTE_OPTIONS[emoji] + " " + value + "\n"
                     emoji += 1
@@ -679,6 +681,9 @@ class PlayBot(discord.Client):
                             return
                         else:
                             self.current_reaction = None
+                    if self.stop_adding_reactions:
+                        await message.delete()
+                        return
                     await message.add_reaction(EMOTE_OPTIONS[i])
         else:
             # print the mutators
