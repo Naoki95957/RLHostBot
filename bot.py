@@ -641,7 +641,7 @@ class PlayBot(discord.Client):
                 else:
                     await self.help_command(argv, True)
     
-    async def attempt_to_host(self, channel: discord.Channel, bypass=False):
+    async def attempt_to_host(self, channel: discord.TextChannel, bypass=False):
         if bypass or not self.players_connected:
             if self.vote_listing:
                 await self.vote_listing[0].delete()
