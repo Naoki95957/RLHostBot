@@ -771,7 +771,7 @@ class PlayBot(discord.Client):
 
     async def handle_reaction(self, reaction: discord.reaction.Reaction, bypass=False, mutator=None):
         # check if this is about the host voting
-        if reaction.message.id == self.vote_listing[0].id:
+        if self.vote_listing and reaction.message.id == self.vote_listing[0].id:
             if len(reaction.count) >= self.vote_listing[1]:
                 self.attempt_to_host(reaction.message.channel, bypass=True)
         # otherise it probably about the mutators
