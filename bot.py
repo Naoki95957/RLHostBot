@@ -628,6 +628,7 @@ class PlayBot(discord.Client):
             for key in MUTATORS.keys():
                 if argv[2].lower() == key.lower() or argv[2].lower() == MUTATORS[key]['alt_name'].lower():
                     argv[2] = key
+                    break
             if len(argv) > 3:
                 argv[3] = argv[3].replace("\"", "")
                 # default or default name
@@ -665,8 +666,9 @@ class PlayBot(discord.Client):
                 options = ""
                 emoji = 0
                 for value in MUTATORS[argv[2]]['values']:
-                    if value == "Default" and "Default" in MUTATORS[argv[2]]:
-                        value = MUTATORS[argv[2]]['Default']
+                    if value == "Default":
+                        if "Default" in MUTATORS[argv[2]]:
+                            value = MUTATORS[argv[2]]['Default']
                     else:
                         value = MUTATOR_VALUE_DICTIONARY[value]
                     options += EMOTE_OPTIONS[emoji] + " " + value + "\n"
@@ -674,6 +676,9 @@ class PlayBot(discord.Client):
                 message = await channel.send("Options for mutator " + MUTATORS[argv[2]]['alt_name'] + " are:\n" + options)
                 self.active_mutator_messages.append((message, argv[2]))
                 for i in range(0, emoji):
+                    if self.stop_adding_reactions:
+                        await message.delete()
+                        return
                     if self.current_reaction:
                         if self.current_reaction.message.id == message.id:
                             await message.delete()
@@ -681,9 +686,6 @@ class PlayBot(discord.Client):
                             return
                         else:
                             self.current_reaction = None
-                    if self.stop_adding_reactions:
-                        await message.delete()
-                        return
                     await message.add_reaction(EMOTE_OPTIONS[i])
         else:
             # print the mutators
@@ -708,6 +710,7 @@ class PlayBot(discord.Client):
                         return
                     if self.current_reaction:
                         if self.current_reaction.message.id == message.id:
+                            await self.clear_active_messages()
                             await message.delete()
                             await self.handle_reaction(self.current_reaction, bypass=True)
                             return
@@ -729,7 +732,6 @@ class PlayBot(discord.Client):
             await self.handle_reaction(reaction)
 
     async def handle_reaction(self, reaction: discord.reaction.Reaction, bypass=False, mutator=None):
-        # TODO determine the equivalent commands to pass back into handle_mutator
         # we can assume they all require colons bc I only used ones w/ colons
         # if not you can check for that
         is_my_message = False
