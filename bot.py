@@ -427,7 +427,7 @@ class PlayBot(discord.Client):
         try:
            await self.handle_command(self.tokenize(message.content), message)
         except Exception as e:
-            pass
+            await message.channel.send("I didn't understand that")
         self.try_saving()
 
     async def handle_command(self, argv: list, message: discord.Message):
@@ -639,6 +639,7 @@ class PlayBot(discord.Client):
                     else:
                         await self.permission_failure(message)
                 else:
+                    await message.channel.send("I didn't understand that")
                     await self.help_command(argv, True)
     
     async def attempt_to_host(self, channel: discord.TextChannel, bypass=False):
@@ -892,6 +893,9 @@ class PlayBot(discord.Client):
                 " link-plugin*\n"+
                 "\tAttempts to start communication with custom plugin:\n\tArgs: None\n\n"+
                 self.base_command +
+                " lock*\n"+
+                "\tThis will make all commands require permissions:\n\tArgs: None\n\n"+
+                self.base_command +
                 " map\n"+
                 "\tPicks map to be hosted:\n\tArgs: [name of map (if there is a gap use quotes)]\n\n"+
                 self.base_command +
@@ -933,6 +937,9 @@ class PlayBot(discord.Client):
                 self.base_command +
                 " unbind*\n"+
                 "\tUnbinds 'scoreboard' message:\n\tArgs: None\n\n"+
+                self.base_command +
+                " unlock*\n"+
+                "\tThis will undo the lock command:\n\tArgs: None\n\n"+
                 self.base_command +
                 " help\n"+
                 "\tPrints list of commands:\n\tArgs: None\n\n"
