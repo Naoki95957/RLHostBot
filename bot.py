@@ -3,7 +3,9 @@ from datetime import timedelta
 from operator import index
 import os
 from os import kill, path
+from discord import emoji
 from discord.ext import tasks
+import math
 import asyncio
 import discord
 import pickle
@@ -11,6 +13,7 @@ import copy
 import json
 import time
 import re
+from discord.reaction import Reaction
 import psutil
 import subprocess
 import websockets
@@ -20,11 +23,40 @@ from pprint import pprint
 
 from websockets.client import WebSocketClientProtocol
 
-# TODO add proper format help for commands
-# TODO list all commands (in help)
+# TODO Voting system in the event users are in a game
+# basically if players are IN the lobby that is currently hosted
+# host will fire up a reaction event with -> 
+# "There are still others playing. Are you sure? need x players to confirm"
+# domain of x will be 2 or greator; x = players / 2
+# TODO optionally lock hosting to permitted roles when called
+# this could be useful for events. If locked they override the 'voting' stuff
+# TODO log scoreboard entries? 
 # TODO show all presets
-# TODO prettier way to handle mutators?
+# read presets bakkes? or scratch that and make your own?
+# commands:
+# presets
+#   lists aval presets
+# presets show '''
+#   reporting presets back to users would just read back the contents
+# presets '''
+#   sends preset to game
 # TODO playlists? maps + presets?
+# make map + preset, ... ?
+# so make is the command
+# map is manditory, preset is optional
+# and ',' indicates next term?
+# TODO JSON the maps -> 
+# {
+#   file0 : {name: "", author: "", date:""},
+#   file1 : {name: "", author: "", date:""},
+#   file2 : {name: "", author: "", date:""}
+#   ...
+# }
+# notes: file is literally the udk file -> `1v1v1.udk` for exmaple
+# name is the offical name of the map
+# Author is creator of the map
+# and date is a MMM. dd YYYY of the map -> "Mar. 31st 2021"
+# ... you probably wanna write a isolated script file to do this 
 
 # how many seconds you would like to get updates
 PLUGIN_FREQUENCY = 5
@@ -33,35 +65,251 @@ PLUGIN_FREQUENCY = 5
 IDLE_COUNT = 60
 # Will always attempt to link the plugin
 ALWAYS_RECONNECT = True
-
+# used to divide up the massive amount of mutators into multiple messages
+MUTATOR_MESSAGES = 2
+# "Mutator" : : {"emote" : ":emoji:", "values" : ["value0", "value1", ...], "Default" : "<meaning>"}
+# if default is not present that's because the meaning is literally default
 MUTATORS = {
-    "FreePlay" : ["Default", "FreePlay"],
-    "GameTimes" : ["Default", "10Minutes", "20Minutes", "UnlimitedTime"],
-    "GameScores" : ["Default", "Max1", "Max3", "Max5", "Max7", "UnlimitedScore"],
-    "OvertimeRules" : ["Default", "Overtime5MinutesFirstScore", "Overtime5MinutesRandom"],
-    "MaxTimeRules" : ["Default", "MaxTime11Minutes"],
-    "MatchGames" : ["Default", "3Games", "5Games", "7Games"],
-    "GameSpeed" : ["Default", "SloMoGameSpeed", "SloMoDistanceBall"],
-    "BallMaxSpeed" : ["Default", "SlowBall", "FastBall", "SuperFastBall"],
-    "BallType" : ["Default", "Ball_CubeBall", "Ball_Puck", "Ball_BasketBall", "Ball_Haunted", "Ball_BeachBall"],
-    "BallGravity" : ["Default", "LowGravityBall", "HighGravityBall", "SuperGravityBall"],
-    "BallWeight" : ["Default", "LightBall", "HeavyBall", "SuperLightBall", "MagnusBall", "MagnusBeachBall"],
-    "BallScale" : ["Default", "SmallBall", "MediumBall", "BigBall", "GiantBall"],
-    "BallBounciness" : ["Default", "LowBounciness", "HighBounciness", "SuperBounciness"],
-    "MultiBall" : ["Default", "TwoBalls", "FourBalls", "SixBalls"],
-    "Boosters" : ["Default", "NoBooster", "UnlimitedBooster", "SlowRecharge", "RapidRecharge"],
-    "Items" : [
-        "Default", "ItemsMode", "ItemsModeSlow",
-        "ItemsModeBallManipulators", "ItemsModeCarManipulators", "ItemsModeSprings",
-        "ItemsModeSpikes", "ItemsModeRugby", "ItemsModeHauntedBallBeam"],
-    "BoosterStrengths" : ["Default", "BoostMultiplier1_5x", "BoostMultiplier2x", "BoostMultiplier10x"],
-    "Gravity" : ["Default", "LowGravity", "HighGravity", "SuperGravity", "ReverseGravity"],
-    "Demolish" : ["Default", "NoDemolish", "DemolishAll", "AlwaysDemolishOpposing", "AlwaysDemolish"],
-    "RespawnTime" : ["Default", "TwoSecondsRespawn", "OnceSecondRespawn", "DisableGoalDelay"],
-    "BotLoadouts" : ["Default", "RandomizedBotLoadouts"],
-    "AudioRules" : ["Default", "HauntedAudio"],
-    "GameEventRules" : ["Default", "HauntedGameEventRules", "RugbyGameEventRules"]
+    "FreePlay" : {
+        "alt_name" : "Free Play",
+        "emote" : "🆓",
+        "values" : ["Default", "FreePlay"],
+        "Default": "Disable Free Play"
+    },
+    "GameTimes" : {
+        "alt_name" : "Match Length",
+        "emote" : "🕐",
+        "values" : ["Default", "10Minutes", "20Minutes", "UnlimitedTime"],
+        "Default" : "5 Minutes"
+    },
+    "GameScores" : {
+        "alt_name" : "Max Score",
+        "emote" : "🗜️",
+        "values" : ["Default", "Max1", "Max3", "Max5", "Max7", "UnlimitedScore"]
+    },
+    "OvertimeRules" : {
+        "alt_name" : "Overtime",
+        "emote" : "⏲️",
+        "values" : ["Default", "Overtime5MinutesFirstScore", "Overtime5MinutesRandom"],
+        "Default": "Unlimited"
+    },
+    "MaxTimeRules" : {
+        "alt_name" : "Max Time Limit",
+        "emote" : "⏰",
+        "values" : ["Default", "MaxTime11Minutes"]
+    },
+    "MatchGames" : {
+        "alt_name" : "Serires Length",
+        "emote" : "🏁",
+        "values" : ["Default", "3Games", "5Games", "7Games"],
+        "Default": "Unlimited"
+    },
+    "GameSpeed" : {
+        "alt_name" : "Game Speed",
+        "emote" : "🎚️",
+        "values" : ["Default", "SloMoGameSpeed", "SloMoDistanceBall"]
+    },
+    "BallMaxSpeed" : {
+        "alt_name" : "Ball Max Speed",
+        "emote" : "🏎️",
+        "values" : ["Default", "SlowBall", "FastBall", "SuperFastBall"]
+    },
+    "BallType" : {
+        "alt_name" : "Ball Type",
+        "emote" : "🏀",
+        "values" : ["Default", "Ball_CubeBall", "Ball_Puck", "Ball_BasketBall", "Ball_Haunted", "Ball_BeachBall"]
+    },
+    "BallGravity" : {
+        "alt_name" : "Ball Gravity",
+        "emote" : "🪂",
+        "values" : ["Default", "LowGravityBall", "HighGravityBall", "SuperGravityBall"]
+    },
+    "BallWeight" : {
+        "alt_name" : "Ball Physics",
+        "emote" : "🪃",
+        "values" : ["Default", "LightBall", "HeavyBall", "SuperLightBall", "MagnusBall", "MagnusBeachBall"]
+    },
+    "BallScale" : {
+        "alt_name" : "Ball Size",
+        "emote" : "💗",
+        "values" : ["Default", "SmallBall", "MediumBall", "BigBall", "GiantBall"]
+    },
+    "BallBounciness" : {
+        "alt_name" : "Ball Bounciness",
+        "emote" : "🏓",
+        "values" : ["Default", "LowBounciness", "HighBounciness", "SuperBounciness"]
+    },
+    "MultiBall" : {
+        "alt_name" : "Number of Balls",
+        "emote" : "🤡",
+        "values" : ["Default", "TwoBalls", "FourBalls", "SixBalls"],
+        "Default": "One"
+    },
+    "Boosters" : {
+        "alt_name" : "Boost Amount",
+        "emote" : "🔥",
+        "values" : ["Default", "NoBooster", "UnlimitedBooster", "SlowRecharge", "RapidRecharge"]
+    },
+    "Items" : {
+        "alt_name" : "Rumble",
+        "emote" : "🌪️",
+        "values" : [
+            "Default", "ItemsMode", "ItemsModeSlow",
+            "ItemsModeBallManipulators", "ItemsModeCarManipulators", "ItemsModeSprings",
+            "ItemsModeSpikes", "ItemsModeRugby", "ItemsModeHauntedBallBeam"
+        ],
+        "Default": "None"
+    },
+    "BoosterStrengths" : {
+        "alt_name" : "Boost Strength",
+        "emote" : "💪",
+        "values" : ["Default", "BoostMultiplier1_5x", "BoostMultiplier2x", "BoostMultiplier10x"],
+        "Default": "1x"
+    },
+    "Gravity" : {
+        "alt_name" : "Gravity",
+        "emote" : "🍂",
+        "values" : ["Default", "LowGravity", "HighGravity", "SuperGravity", "ReverseGravity"]
+    },
+    "Demolish" : {
+        "alt_name" : "Demolish",
+        "emote" : "🪖",
+        "values" : ["Default", "NoDemolish", "DemolishAll", "AlwaysDemolishOpposing", "AlwaysDemolish"]
+    },
+    "RespawnTime" : {
+        "alt_name" : "Respawn Time",
+        "emote" : "🐈",
+        "values" : ["Default", "TwoSecondsRespawn", "OnceSecondRespawn", "DisableGoalDelay"],
+        "Default": "3 Seconds"
+    },
+    "BotLoadouts" : {
+        "alt_name" : "Bot Loadouts",
+        "emote" : "🎒",
+        "values" : ["Default", "RandomizedBotLoadouts"]
+    },
+    "AudioRules" : {
+        "alt_name" : "Audio",
+        "emote" : "🔊",
+        "values" : ["Default", "HauntedAudio"]
+    },
+    "GameEventRules" : {
+        "alt_name" : "Game Event",
+        "emote" : "🎲",
+        "values" : ["Default", "HauntedGameEventRules", "RugbyGameEventRules"]
+    }
 }
+
+# This translate the raw 'value' (except defaults) for the mutators to something more understandable
+# Default is left out since the actual value is "", literally \"\"
+MUTATOR_VALUE_DICTIONARY = {
+    # free play
+    "FreePlay" : "Enable Freeplay",
+    # match length
+    "10Minutes" : "10 minutes",
+    "20Minutes" : "20 minutes",
+    "UnlimitedTime" : "Unlimited",
+    # max score
+    "Max1" : "1 Goal",
+    "Max3" : "3 Goals",
+    "Max5" : "5 Goals",
+    "Max7" : "7 Goals",
+    # overtime
+    "UnlimitedScore" : "Unlimited",
+    "Overtime5MinutesFirstScore" : "+5 Max, First Score", 
+    "Overtime5MinutesRandom" : "+5 Max, Random Team",
+    # max time limit
+    "MaxTime11Minutes" : "11 Minutes",
+    # series length
+    "3Games" : "3 Games",
+    "5Games" : "5 Games",
+    "7Games" : "7 Games",
+    # game speed
+    "SloMoGameSpeed" : "Slo-mo",
+    "SloMoDistanceBall" : "Time Warp",
+    # ball max speed
+    "SlowBall" : "Slow",
+    "FastBall" : "Fast",
+    "SuperFastBall" : "Super Fast",
+    # ball type
+    "Ball_CubeBall" : "Cube",
+    "Ball_Puck" : "Puck",
+    "Ball_BasketBall" : "Basketball",
+    "Ball_Haunted" : "Haunted Ball",
+    "Ball_BeachBall" : "Beach Ball",
+    # ball gravity
+    "LowGravityBall" : "Low",
+    "HighGravityBall" : "High",
+    "SuperGravityBall" : "Super High",
+    # ball physics
+    "LightBall" : "Light",
+    "HeavyBall" : "Heavy",
+    "SuperLightBall" : "Super Light",
+    "MagnusBall" : "Curve",
+    "MagnusBeachBall" : "Beach Ball Curve",
+    # ball size
+    "SmallBall" : "Small",
+    "MediumBall" : "Medium",
+    "BigBall" : "Large",
+    "GiantBall" : "Gigantic",
+    # ball bounciness
+    "LowBounciness" : "Low",
+    "HighBounciness" : "High",
+    "SuperBounciness" : "Super High",
+    # number of balls
+    "TwoBalls" : "Two",
+    "FourBalls" : "Four",
+    "SixBalls" : "Six",
+    # boost amount
+    "NoBooster" : "No Boost",
+    "UnlimitedBooster" : "Unlimited",
+    "SlowRecharge" : "Recharge (slow)",
+    "RapidRecharge" : "Recharge (fast)",
+    # rumble
+    "ItemsMode" : "Default",
+    "ItemsModeSlow" : "Slow",
+    "ItemsModeBallManipulators" : "Civilized",
+    "ItemsModeCarManipulators" : "Destruction Derby",
+    "ItemsModeSprings" : "Spring Loaded",
+    "ItemsModeSpikes" : "Spikes Only",
+    "ItemsModeRugby" : "Rugby",
+    "ItemsModeHauntedBallBeam" : "Haunted Ball Beam",
+    # boost strength
+    "BoostMultiplier1_5x" : "1.5x",
+    "BoostMultiplier2x" : "2x",
+    "BoostMultiplier10x" : "10x",
+    # gravity
+    "LowGravity" : "Low",
+    "HighGravity" : "High",
+    "SuperGravity" : "Super High",
+    "ReverseGravity" : "Reverse",
+    # demolish
+    "NoDemolish" : "Disabled",
+    "DemolishAll" : "Friendly Fire",
+    "AlwaysDemolishOpposing" : "On Contact",
+    "AlwaysDemolish" : "On Contact (FF)",
+    # respawn time
+    "TwoSecondsRespawn" : "2 Seconds",
+    "OnceSecondRespawn" : "1 Second",
+    "DisableGoalDelay" : "Disable Goal Reset",
+    # bot loadouts
+    "RandomizedBotLoadouts" : "Random",
+    # Audio
+    "HauntedAudio" : "Haunted",
+    # Game event
+    "HauntedGameEventRules" : "Haunted",
+    "RugbyGameEventRules" : "Rugby"
+}
+
+# no mutators take more than 9 so 12 should be enough for now
+# these will be the 'options' for the values on a given mutator
+EMOTE_OPTIONS = [
+    '🇦', '🇧',
+    '🇨', '🇩',
+    '🇪', '🇫',
+    '🇬', '🇭',
+    '🇮', '🇯',
+    '🇰', '🇱'
+]
 
 class PlayBot(discord.Client):
 
@@ -79,6 +327,10 @@ class PlayBot(discord.Client):
     companion_plugin_connected = False
     reconnect = False
     idle_counter = 0
+
+    active_mutator_messages = []
+    stop_adding_reactions = False
+    current_reaction = None
 
     str_pattern = "\'.*?\'|\".*?\"|\(.*?\)|[a-zA-Z\d\_\*\-\\\+\/\[\]\?\!\@\#\$\%\&\=\~\`]+"
     
@@ -252,13 +504,14 @@ class PlayBot(discord.Client):
                         await message.edit(content="Done")
                 # mutator passing
                 elif argv[1] == 'mutator':
-                    if not self.companion_plugin_connected:
-                        await message.channel.send("RL is not running")
-                    else:
+                    # if not self.companion_plugin_connected:
+                    #     await message.channel.send("RL is not running")
+                    # else:
                         try:
-                            await self.handle_mutators(argv, message)
+                            await self.handle_mutators(argv, message.channel)
                         except Exception as e:
-                            await message.channel.send("Sorry I didn't understand that")
+                            # exceptions will be printed based on code logic, no need for it here
+                            pass 
                 # preset passing
                 elif argv[1] == 'preset':
                     if not self.companion_plugin_connected:
@@ -368,27 +621,144 @@ class PlayBot(discord.Client):
                 else:
                     await self.help_command(argv, True)
 
-    async def handle_mutators(self, argv: list, message: discord.Message):
+    async def handle_mutators(self, argv: list, channel: discord.TextChannel):
+        self.stop_adding_reactions = False
         if len(argv) > 2:
+            argv[2] = argv[2].replace("\"", "")
             for key in MUTATORS.keys():
-                if argv[2].lower() == key.lower():
+                if argv[2].lower() == key.lower() or argv[2].lower() == MUTATORS[key]['alt_name'].lower():
                     argv[2] = key
-            if len(argv) > 3 and argv[3].lower() in (string.lower() for string in MUTATORS[argv[2]]):
-                if argv[3].lower() == "default":
+            if len(argv) > 3:
+                argv[3] = argv[3].replace("\"", "")
+                # default or default name
+                if argv[3].lower() == "default" or ('Default' in MUTATORS[argv[2]] and argv[3].lower() == MUTATORS[argv[2]]['Default'].lower()):
                     await self.attempt_to_sendRL("rp mutator " + argv[2] + " \\\"\\\"")
+                    await self.clear_active_messages()
+                    await channel.send("Sent mutator to game")
+                # direct key matching (they have to be devs to know this... but I'll leave it in here I guess)
+                elif argv[3].lower() in (string.lower() for string in MUTATORS[argv[2]]):
+                    await self.attempt_to_sendRL("rp mutator \"" + argv[2] + "\" \"" + argv[3] + "\"")
+                    await self.clear_active_messages()
+                    await channel.send("Sent mutator to game")
+                # else detect if arg3 is of the variant name to some key
                 else:
-                    await self.attempt_to_sendRL("rp mutator " + argv[2] + " " + argv[3])
-                await message.channel.send("Mutator sent")
+                    # check if it's just a matching term to one of the raw values
+                    found = argv[3].lower() in (val.lower() for val in MUTATORS[argv[2]]['values'])
+                    # if not we can check the translations made
+                    if not found:
+                        for key in MUTATOR_VALUE_DICTIONARY.keys():
+                            if argv[3].lower() == MUTATOR_VALUE_DICTIONARY[key].lower():
+                                argv[3] = key
+                                found = True
+                                break
+                    if found:
+                        # success
+                        await self.attempt_to_sendRL("rp mutator \"" + argv[2] + "\" \"" + argv[3] + "\"")
+                        await self.clear_active_messages()
+                        await channel.send("Sent mutator to game")
+                    else:
+                        await channel.send("Sorry I didn't understand that...")
+                        # call back message down to the point where we didn't understand it to reload the prompt
+                        await self.handle_mutators([argv[0], argv[1], argv[2]], channel)
             else:
+                # print the values
                 options = ""
-                for value in MUTATORS[argv[2]]:
-                    options += value + "\n"
-                await message.channel.send("Options for mutator " + argv[2] + " are:\n" + options)
+                emoji = 0
+                for value in MUTATORS[argv[2]]['values']:
+                    if value != "Default":
+                        value = MUTATOR_VALUE_DICTIONARY[value]
+                    options += EMOTE_OPTIONS[emoji] + " " + value + "\n"
+                    emoji += 1
+                message = await channel.send("Options for mutator " + MUTATORS[argv[2]]['alt_name'] + " are:\n" + options)
+                self.active_mutator_messages.append((message, argv[2]))
+                for i in range(0, emoji):
+                    if self.current_reaction:
+                        if self.current_reaction.message.id == message.id:
+                            await message.delete()
+                            await self.handle_reaction(self.current_reaction, bypass=True, mutator=argv[2])
+                            return
+                        else:
+                            self.current_reaction = None
+                    await message.add_reaction(EMOTE_OPTIONS[i])
         else:
-            options = ""
-            for value in MUTATORS.keys():
-                options += value + "\n"
-            await message.channel.send("Availible mutators are:\n" + options)
+            # print the mutators
+            mutators_per_message = math.ceil(len(MUTATORS.keys()) / MUTATOR_MESSAGES)
+            keys = list(MUTATORS.keys())
+            mutator_index = 0
+            prompt = "Availible mutators are:\n"
+            for message_index in range(0, MUTATOR_MESSAGES):
+                reactions = []
+                options = ""
+                for i in range(mutator_index, mutator_index + mutators_per_message):
+                    if mutator_index < len(MUTATORS.keys()):
+                        options += MUTATORS[keys[mutator_index]]['emote'] + " " + MUTATORS[keys[i]]['alt_name'] + "\n"
+                        reactions.append(MUTATORS[keys[mutator_index]]['emote'])
+                        mutator_index += 1
+                    else:
+                        break
+                message = await channel.send(prompt + options)
+                for emote in reactions:
+                    if self.stop_adding_reactions:
+                        await message.delete()
+                        return
+                    if self.current_reaction:
+                        if self.current_reaction.message.id == message.id:
+                            await message.delete()
+                            await self.handle_reaction(self.current_reaction, bypass=True)
+                            return
+                        else:
+                            self.current_reaction = None
+                    await message.add_reaction(emote)
+                if len(self.active_mutator_messages) > 0:
+                    self.active_mutator_messages.append((message, None))
+                else:
+                    self.active_mutator_messages = [(message, None)]
+                prompt = "More mutators:\n"
+
+    async def on_reaction_add(self, reaction: discord.reaction.Reaction, user: discord.user.User):
+        # if bot is tracking messages
+        if int(self.bot_id) != user.id:
+            self.current_reaction = reaction
+        if self.active_mutator_messages and int(self.bot_id) != user.id:
+            # check if reaction is on one of the bots messages
+            await self.handle_reaction(reaction)
+
+    async def handle_reaction(self, reaction: discord.reaction.Reaction, bypass=False, mutator=None):
+        # TODO determine the equivalent commands to pass back into handle_mutator
+        # we can assume they all require colons bc I only used ones w/ colons
+        # if not you can check for that
+        is_my_message = False
+        for active_message, mutator_category in self.active_mutator_messages:
+            if reaction.message.id == active_message.id:
+                is_my_message = True
+                mutator = mutator_category
+        # this is fine since the reaction is actually
+        # saved in on_reaction_add for earlier anaylsis
+        if is_my_message or bypass:
+            arg = str(reaction)
+            arg2 = None
+            for key in MUTATORS.keys():
+                if arg == MUTATORS[key]['emote']:
+                    arg = key
+                    break
+                elif arg in EMOTE_OPTIONS:
+                    arg2 = MUTATORS[mutator]['values'][EMOTE_OPTIONS.index(arg)]
+                    arg = mutator
+                    break
+            await self.clear_active_messages()
+            # rebuild the command equivalent based on reactions
+            argv = [" ", "mutator"]
+            if arg:
+                argv.append(arg)
+            if arg2:
+                argv.append(arg2)
+            await self.handle_mutators(argv, reaction.message.channel)
+
+    async def clear_active_messages(self):
+        self.stop_adding_reactions = True
+        while self.active_mutator_messages:
+            message, mutator = self.active_mutator_messages.pop()
+            await message.delete()
 
     async def list_maps(self, message: discord.Message):
         try:
