@@ -899,7 +899,7 @@ class PlayBot(discord.Client):
                 " demote*\n"+
                 "\tRemove a role from permissions:\n\tArgs: [role id]\n\n"+
                 self.base_command +
-                " host\n"+
+                " **host**\n"+
                 "\tStart up a game! If players are in game it will instead vote:\n\tArgs: None\n\n"+
                 self.base_command +
                 " killRL*\n"+
@@ -911,22 +911,22 @@ class PlayBot(discord.Client):
                 " lock*\n"+
                 "\tThis will make all commands require permissions:\n\tArgs: None\n\n"+
                 self.base_command +
-                " map\n"+
+                " **map**\n"+
                 "\tPicks map to be hosted:\n\tArgs: [name of map (if there is a gap use quotes)]\n\n"+
                 self.base_command +
                 " mapd*\n"+
                 "\tLoad map from directory listing:\n\tArgs: [full path of map]\n\n"+
                 self.base_command +
-                " list-maps\n"+
+                " **list-maps**\n"+
                 "\tList all the availble maps:\n\tArgs: None\n\n"+
                 self.base_command +
-                " mutator\n"+
+                " **mutator**\n"+
                 "\tSend mutators to the game (text and reaction controlled):\n\tArgs: [mutator][value]\n\n"+
                 self.base_command +
                 " permit*\n"+
                 "\tAdds a role to permssions:\n\tArgs: [role id]\n\n"+
                 self.base_command +
-                " preset\n"+
+                " **preset**\n"+
                 "\tLoad in a predefined preset:\n\tArgs: [name of preset (case sensitve)]\n\n"+
                 self.base_command +
                 " reload-maps*\n"+
@@ -947,7 +947,7 @@ class PlayBot(discord.Client):
                 " startRL*\n"+
                 "\tOnly starts up rocket league application:\n\tArgs: None\n\n"+
                 self.base_command +
-                " start\n"+
+                " **start**\n"+
                 "\tStarts application and loads plugins:\n\tArgs: None\n\n"+
                 self.base_command +
                 " unbind*\n"+
@@ -956,7 +956,7 @@ class PlayBot(discord.Client):
                 " unlock*\n"+
                 "\tThis will undo the lock command:\n\tArgs: None\n\n"+
                 self.base_command +
-                " help\n"+
+                " **help**\n"+
                 "\tPrints list of commands:\n\tArgs: None\n\n"
             )
         else:
