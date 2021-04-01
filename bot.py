@@ -330,6 +330,7 @@ class PlayBot(discord.Client):
 
     active_mutator_messages = []
     stop_adding_reactions = False
+    in_reactions = False
     current_reaction = None
     admin_locked = False
     match_request_message = None
@@ -639,7 +640,6 @@ class PlayBot(discord.Client):
                     else:
                         await self.permission_failure(message)
                 else:
-                    await message.channel.send("I didn't understand that")
                     await self.help_command(argv, True)
     
     async def attempt_to_host(self, channel: discord.TextChannel, bypass=False):
@@ -711,20 +711,28 @@ class PlayBot(discord.Client):
                         value = MUTATOR_VALUE_DICTIONARY[value]
                     options += EMOTE_OPTIONS[emoji] + " " + value + "\n"
                     emoji += 1
+                while(self.in_reactions):
+                    # I can't control the scheduler and I'm too lazy to put a mutex on something like discord bots
+                    time.sleep(0.5)
                 message = await channel.send("Options for mutator " + MUTATORS[argv[2]]['alt_name'] + " are:\n" + options)
-                self.active_mutator_messages.append((message, argv[2]))
+                self.in_reactions = True
                 for i in range(0, emoji):
-                    if self.stop_adding_reactions:
+                    if self.active_mutator_messages:
+                        await self.clear_active_messages()
+                    if self.stop_adding_reactions or not self.in_reactions:
                         await message.delete()
                         return
                     if self.current_reaction:
                         if self.current_reaction.message.id == message.id:
                             await message.delete()
+                            self.in_reactions = False
                             await self.handle_reaction(self.current_reaction, bypass=True, mutator=argv[2])
                             return
                         else:
                             self.current_reaction = None
                     await message.add_reaction(EMOTE_OPTIONS[i])
+                self.in_reactions = False
+                self.active_mutator_messages.append((message, argv[2]))
         else:
             # print the mutators
             mutators_per_message = math.ceil(len(MUTATORS.keys()) / MUTATOR_MESSAGES)
@@ -742,23 +750,25 @@ class PlayBot(discord.Client):
                     else:
                         break
                 message = await channel.send(prompt + options)
+                self.active_mutator_messages.append((message, None))
+                # this boolean helps main undestand what scope it's tasks are in
+                # since this is scheduling and not multithreading
+                self.in_reactions = True
                 for emote in reactions:
-                    if self.stop_adding_reactions:
+                    if self.stop_adding_reactions or not self.in_reactions:
                         await message.delete()
                         return
                     if self.current_reaction:
                         if self.current_reaction.message.id == message.id:
                             await self.clear_active_messages()
                             await message.delete()
+                            self.in_reactions = False
                             await self.handle_reaction(self.current_reaction, bypass=True)
                             return
                         else:
                             self.current_reaction = None
                     await message.add_reaction(emote)
-                if len(self.active_mutator_messages) > 0:
-                    self.active_mutator_messages.append((message, None))
-                else:
-                    self.active_mutator_messages = [(message, None)]
+                self.in_reactions = False
                 prompt = "More mutators:\n"
 
     async def on_reaction_add(self, reaction: discord.reaction.Reaction, user: discord.user.User):
@@ -780,7 +790,8 @@ class PlayBot(discord.Client):
             for active_message, mutator_category in self.active_mutator_messages:
                 if reaction.message.id == active_message.id:
                     is_my_message = True
-                    mutator = mutator_category
+                    mutator = mutator_category # TODO add break
+                    break
             # this is fine since the reaction is actually
             # saved in on_reaction_add for earlier anaylsis
             if is_my_message or bypass:
@@ -804,8 +815,11 @@ class PlayBot(discord.Client):
                 await self.handle_mutators(argv, reaction.message.channel)
 
     async def clear_active_messages(self):
+        # I don't know why I need both flags, 
+        # it seems redundant but it didnt' work without it
         self.stop_adding_reactions = True
         while self.active_mutator_messages:
+            self.in_reactions = False
             message, mutator = self.active_mutator_messages.pop()
             await message.delete()
 
