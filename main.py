@@ -1,8 +1,8 @@
-from bot import PlayBot
+from bot import HostingBot
 from bot_terminal import BotTerminal
 
 def main():
-    bot = PlayBot(print_statements=True)
+    bot = HostingBot(print_statements=True)
     bot.initialize()
     # TODO reincorperate back terminal
     # terminal = BotTerminal(bot).start()

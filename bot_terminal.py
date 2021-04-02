@@ -1,4 +1,4 @@
-from bot import PlayBot
+from bot import HostingBot
 from pprint import pprint
 from threading import Thread
 import sys
@@ -18,7 +18,7 @@ class BotTerminal:
     str_pattern = "\'.*?\'|\".*?\"|\(.*?\)|[a-zA-Z\d\_\*\-\\\+\/\[\]\?\!\@\#\$\%\&\=\~\`]+"
     pattern = None
 
-    def __init__(self, playbot: PlayBot):
+    def __init__(self, playbot: HostingBot):
         self.bot = playbot
         self.pattern = re.compile(self.str_pattern)
         self.execute = {

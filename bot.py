@@ -302,7 +302,7 @@ VOTE_TO_PASS_EMOTE = "🗳️"
 # "file.udk" : {"title":"my custom map", "author":"by me", "description":"don't use plz"}
 MAP_LIST = "./map_info.json"
 
-class PlayBot(discord.Client):
+class HostingBot(discord.Client):
 
     bot_id = 1234567890
     my_id = 1234567890
@@ -420,7 +420,7 @@ class PlayBot(discord.Client):
                     f'\nRoles in order: {guild.roles}'
                 )
             self.roles.extend(guild.roles)
-        await PlayBot.change_presence(self, activity=discord.Activity(type=discord.ActivityType.listening, name="others play Rocket League"))
+        await HostingBot.change_presence(self, activity=discord.Activity(type=discord.ActivityType.listening, name="others play Rocket League"))
 
     async def on_message(self, message: discord.message.Message):
         if message.author.id == self.bot_id or self.base_command not in str(message.content):
@@ -1322,7 +1322,7 @@ class PlayBot(discord.Client):
 
 
 def main():
-    bot = PlayBot(print_statements=True)
+    bot = HostingBot(print_statements=True)
     bot.initialize()
     
 if __name__ == "__main__":
