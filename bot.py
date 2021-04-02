@@ -569,6 +569,7 @@ class PlayBot(discord.Client):
                     else:
                         await self.permission_failure(message)
                 # selects the map and send it to rl
+                # also prints the selected map info
                 elif argv[1] == 'map':
                     if not self.companion_plugin_connected:
                         await message.channel.send("RL is not running")
@@ -576,9 +577,7 @@ class PlayBot(discord.Client):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         await self.send_selected_map(argv[2], message.channel)
-                # selects the map and send it to rl
-                # TODO if users are in game check if
-                # you are sure you want to do this
+                # attempts to start up the match with the given settings
                 elif argv[1] == 'host':
                     if not self.companion_plugin_connected:
                         await message.channel.send("RL is not running")
@@ -588,6 +587,7 @@ class PlayBot(discord.Client):
                         await self.attempt_to_host(message.channel)
                 # sends map (full path) to rl
                 elif argv[1] == 'mapd':
+                    if self.has_permission(message):
                         await self.attempt_to_sendRL("rp mapd " + argv[2])
                         await message.channel.send("Sent map to game")
                 # script that restarts rl
@@ -615,12 +615,12 @@ class PlayBot(discord.Client):
                         await self.permission_failure(message)
                 # allows one to access bakkesconsole
                 elif argv[1] == 'console':
-                    if not self.companion_plugin_connected:
-                        await message.channel.send("RL is not running")
-                    else:
                         if self.has_permission(message):
-                            await self.pass_to_console(argv, message)
-                            await message.channel.send("Sent instructions to game")
+                            if not self.companion_plugin_connected:
+                                await message.channel.send("RL is not running")
+                            else:
+                                await self.pass_to_console(argv, message)
+                                await message.channel.send("Sent instructions to game")
                         else:
                             await self.permission_failure(message)
                 # link companion plugin for info
@@ -641,8 +641,8 @@ class PlayBot(discord.Client):
 
     async def send_selected_map(self, arg: str, channel: discord.TextChannel):
         try:
-            # this should be the full path
             message = await channel.send("Getting map info...")
+            # this should be the full path
             file_path = self.custom_map_dictionary[arg.replace("\"", "")]
             file_name = os.path.basename(file_path)
             title = self.master_map_list[file_name]['title']
