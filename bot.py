@@ -18,6 +18,7 @@ from threading import Thread
 from dotenv import load_dotenv
 from pprint import pprint
 
+
 # TODO log scoreboard entries? 
 # TODO show all presets
 # read presets bakkes? or scratch that and make your own?
@@ -29,18 +30,6 @@ from pprint import pprint
 # so make is the command
 # map is manditory, preset is optional
 # and ',' indicates next term?
-# TODO JSON the maps -> 
-# {
-#   file0 : {name: "", author: "", date:""},
-#   file1 : {name: "", author: "", date:""},
-#   file2 : {name: "", author: "", date:""}
-#   ...
-# }
-# notes: file is literally the udk file -> `1v1v1.udk` for exmaple
-# name is the offical name of the map
-# Author is creator of the map
-# and date is a MMM. dd YYYY of the map -> "Mar. 31st 2021"
-# ... you probably wanna write a isolated script file to do this 
 
 # fix fugly code
 
@@ -309,6 +298,10 @@ EMOTE_OPTIONS = [
 
 VOTE_TO_PASS_EMOTE = "🗳️"
 
+# This json is in the form:
+# "file.udk" : {"title":"my custom map", "author":"by me", "description":"don't use plz"}
+MAP_LIST = "./map_info.json"
+
 class PlayBot(discord.Client):
 
     bot_id = 1234567890
@@ -336,6 +329,7 @@ class PlayBot(discord.Client):
     match_request_message = None
 
     str_pattern = "\'.*?\'|\".*?\"|\(.*?\)|[a-zA-Z\d\_\*\-\\\+\/\[\]\?\!\@\#\$\%\&\=\~\`]+"
+    master_map_list = None
     
     file = "./bot_stuff.p"
     background_timer = 15 # how frequently background tasks will be executed
@@ -368,6 +362,7 @@ class PlayBot(discord.Client):
         self.token = os.getenv('DISCORD_TOKEN')
         self.game_password = os.getenv('GAME_PASSWORD')
         self.print_statements = print_statements
+        self.master_map_list = json.load(open(MAP_LIST))
 
     def initialize(self):
         Thread(target=self.__background_loop).start()
@@ -388,7 +383,12 @@ class PlayBot(discord.Client):
         for root, dirs, files in os.walk(self.custom_path):
             for file in files:
                 if file.endswith('.udk'):
-                    map_index[file.replace('.udk', '')] = os.path.join(root, file)
+                    list_name = self.master_map_list[file]['title']
+                    iteration = 0
+                    while (list_name in map_index.keys()):
+                        iteration += 1
+                        list_name = self.master_map_list[file]['title'] + " (" + str(iteration) + ")"
+                    map_index[list_name] = os.path.join(root, file)
         self.custom_map_dictionary = map_index
 
     def enable_print_statements(self, val: bool):
@@ -475,7 +475,7 @@ class PlayBot(discord.Client):
                         await self.permission_failure(message)
                 # lists maps known to the bot
                 elif argv[1] == 'list-maps':
-                    if self.admin_locked:
+                    if self.admin_locked and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         await self.list_maps(message)
@@ -508,7 +508,7 @@ class PlayBot(discord.Client):
                 elif argv[1] == 'start':
                     if self.companion_plugin_connected:
                         await message.channel.send("RL is already running")
-                    elif self.admin_locked:
+                    elif self.admin_locked and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         message = await message.channel.send("Working on it ...")
@@ -528,7 +528,7 @@ class PlayBot(discord.Client):
                 elif argv[1] == 'mutator':
                     if not self.companion_plugin_connected:
                         await message.channel.send("RL is not running")
-                    elif self.admin_locked:
+                    elif self.admin_locked and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         try:
@@ -540,7 +540,7 @@ class PlayBot(discord.Client):
                 elif argv[1] == 'preset':
                     if not self.companion_plugin_connected:
                         await message.channel.send("RL is not running")
-                    elif self.admin_locked:
+                    elif self.admin_locked and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         try:
@@ -570,23 +570,19 @@ class PlayBot(discord.Client):
                         await self.permission_failure(message)
                 # selects the map and send it to rl
                 elif argv[1] == 'map':
-                    if not self.companion_plugin_connected:
-                        await message.channel.send("RL is not running")
-                    elif self.admin_locked:
+                    # if not self.companion_plugin_connected:
+                    #     await message.channel.send("RL is not running")
+                    if self.admin_locked and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
-                        if argv[2] in self.custom_map_dictionary.keys():
-                            await self.attempt_to_sendRL("rp map " + argv[2])
-                            await message.channel.send("Sent map to game")
-                        else:
-                            await message.channel.send("I couldn't find that map :(")
+                        await self.send_selected_map(argv[2], message.channel)
                 # selects the map and send it to rl
                 # TODO if users are in game check if
                 # you are sure you want to do this
                 elif argv[1] == 'host':
                     if not self.companion_plugin_connected:
                         await message.channel.send("RL is not running")
-                    elif self.admin_locked:
+                    elif self.admin_locked and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         await self.attempt_to_host(message.channel)
@@ -642,6 +638,24 @@ class PlayBot(discord.Client):
                         await self.permission_failure(message)
                 else:
                     await self.help_command(argv, True)
+
+    async def send_selected_map(self, arg: str, channel: discord.TextChannel):
+        try:
+            # this should be the full path
+            message = await channel.send("Getting map info...")
+            file_path = self.custom_map_dictionary[arg.replace("\"", "")]
+            file_name = os.path.basename(file_path)
+            title = self.master_map_list[file_name]['title']
+            author = self.master_map_list[file_name]['author']
+            description = self.master_map_list[file_name]['description']
+            await self.attempt_to_sendRL('rp map ' + file_name.replace(".udk", ""))
+            message_str = ("Map sent to game:\n\n" +
+                "*file: " + file_name + "*\n"
+                "**" + title + "**\n" +
+                "**By: " + author + "**\n\n" + description)
+            await message.edit(content=message_str)
+        except Exception as e:
+            await message.edit(content="Sorry, I couldn't find that map :(")
     
     async def attempt_to_host(self, channel: discord.TextChannel, bypass=False):
         if bypass or not self.players_connected:
@@ -825,9 +839,10 @@ class PlayBot(discord.Client):
             await message.delete()
 
     async def list_maps(self, message: discord.Message):
+        description = "Here is a list of all the maps I can host:"
         try:
             embed_var = discord.Embed(
-                description="Here is a list of all the maps I can host:")
+                description=description)
             value_str = ""
             extras = False
             keys = list(self.custom_map_dictionary.keys())
@@ -846,10 +861,12 @@ class PlayBot(discord.Client):
                 if len(embed_var) > 4975:
                     await message.channel.send(embed=embed_var)
                     embed_var = discord.Embed(
-                        description="Here is a list of all the maps I can host:")
+                        description=description)
                     value_str = ""
-                    extras = False
-                value_str += map_key + "\n"
+                    description = "Here are some more maps that I can host:"
+                    embed_var = discord.Embed(
+                        description=description)
+                value_str += "\"" + map_key + "\"\n"
             embed_var.add_field(name=name, value=copy.deepcopy(value_str))
             await message.channel.send(embed=embed_var)
         except Exception as e:
