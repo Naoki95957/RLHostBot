@@ -15,7 +15,7 @@ import json
 
 URL = "https://steamcommunity.com/sharedfiles/filedetails/?id=" 
 DIR = "Z:\\rocketLeagueMaps"
-CHROME_DRIVER = '/drivers/win_chromedriver89.exe'
+CHROME_DRIVER = './win_chromedriver89.exe'
 
 class WebThingy:
     my_url = ''
