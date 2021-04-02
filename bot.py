@@ -571,8 +571,8 @@ class PlayBot(discord.Client):
                 # selects the map and send it to rl
                 # also prints the selected map info
                 elif argv[1] == 'map':
-                    if not self.companion_plugin_connected:
-                        await message.channel.send("RL is not running")
+                    # if not self.companion_plugin_connected:
+                    #     await message.channel.send("RL is not running")
                     if self.admin_locked and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
@@ -649,10 +649,10 @@ class PlayBot(discord.Client):
             author = self.master_map_list[file_name]['author']
             description = self.master_map_list[file_name]['description']
             await self.attempt_to_sendRL('rp map ' + file_name.replace(".udk", ""))
-            message_str = ("Map sent to game:\n\n" +
-                "*file: " + file_name + "*\n"
+            message_str = ("Map sent to game:\n" +
                 "**" + title + "**\n" +
-                "**By: " + author + "**\n\n" + description)
+                "**By: " + author + "**\n" + 
+                "*file: " + file_name + "*\n\n" + description)
             await message.edit(content=message_str)
         except Exception as e:
             await message.edit(content="Sorry, I couldn't find that map :(")
