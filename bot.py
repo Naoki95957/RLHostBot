@@ -570,8 +570,8 @@ class PlayBot(discord.Client):
                         await self.permission_failure(message)
                 # selects the map and send it to rl
                 elif argv[1] == 'map':
-                    # if not self.companion_plugin_connected:
-                    #     await message.channel.send("RL is not running")
+                    if not self.companion_plugin_connected:
+                        await message.channel.send("RL is not running")
                     if self.admin_locked and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
