@@ -793,7 +793,7 @@ class HostingBot(discord.Client):
             mutators_per_message = math.ceil(len(MUTATORS.keys()) / MUTATOR_MESSAGES)
             keys = list(MUTATORS.keys())
             mutator_index = 0
-            prompt = "Availible mutators are:\n"
+            prompt = "Available mutators are:\n"
             for message_index in range(0, MUTATOR_MESSAGES):
                 reactions = []
                 options = ""
