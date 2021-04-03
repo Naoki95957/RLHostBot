@@ -1,8 +1,9 @@
 from datetime import timedelta
 import os
 from os import path
-from discord import reaction
 from discord.ext import tasks
+import sys
+import subprocess
 import math
 import asyncio
 import discord
@@ -20,16 +21,20 @@ from pprint import pprint
 
 
 # TODO log scoreboard entries? 
+# 
 # TODO show all presets
 # read presets bakkes? or scratch that and make your own?
 # commands:
 # list presets
 #   lists aval presets
-# TODO playlists? maps + presets?
+# 
+# TODO big feature: playlists? maps + presets?
 # make map + preset, ... ?
 # so make is the command
 # map is manditory, preset is optional
 # and ',' indicates next term?
+# 
+# read playlists? edit them?
 
 # fix fugly code
 
@@ -302,8 +307,13 @@ VOTE_TO_PASS_EMOTE = "🗳️"
 # "file.udk" : {"title":"my custom map", "author":"by me", "description":"don't use plz"}
 MAP_LIST = "./map_info.json"
 
+URL_REGEX = r"\<.*?\>"
+
+STR_COMMAND_PATTERN = "\'.*?\'|\".*?\"|\(.*?\)|[a-zA-Z\d\_\*\-\\\+\/\[\]\?\!\@\#\$\%\&\=\~\`]+"
+
 class HostingBot(discord.Client):
 
+    # stuff for dotenv to setup
     bot_id = 1234567890
     my_id = 1234567890
     bakkesmod_server = ''
@@ -314,22 +324,24 @@ class HostingBot(discord.Client):
     ip_address = ""
     game_password = ""
 
+    # things that the bot will self-set up
     rl_pid = None
+    url_embed_count = -1
     companion_plugin_connected = False
     reconnect = False
     players_connected = 0
     idle_counter = 0
     vote_listing = None
+    url_pattern = None
+    master_map_list = None
 
+    # match stuff
     active_mutator_messages = []
     stop_adding_reactions = False
     in_reactions = False
     current_reaction = None
     admin_locked = False
     match_request_message = None
-
-    str_pattern = "\'.*?\'|\".*?\"|\(.*?\)|[a-zA-Z\d\_\*\-\\\+\/\[\]\?\!\@\#\$\%\&\=\~\`]+"
-    master_map_list = None
     
     file = "./bot_stuff.p"
     background_timer = 15 # how frequently background tasks will be executed
@@ -352,7 +364,8 @@ class HostingBot(discord.Client):
     def __init__(self, print_statements=False):
         super().__init__()
         load_dotenv('./config.env')
-        self.pattern = re.compile(self.str_pattern)
+        self.command_pattern = re.compile(STR_COMMAND_PATTERN)
+        self.url_pattern = re.compile(URL_REGEX)
         self.bot_id = os.getenv('BOT_ID')
         self.my_id = os.getenv('MY_ID')
         self.bakkesmod_server = os.getenv('BAKKES_SERVER')
@@ -380,6 +393,8 @@ class HostingBot(discord.Client):
         This just indexes custom maps and puts them into a dictionary for future use
         """
         map_index = {}
+        # doesn't seem to like this
+        # subprocess.Popen([sys.executable, "./map_scraper.py"])
         for root, dirs, files in os.walk(self.custom_path):
             for file in files:
                 if file.endswith('.udk'):
@@ -496,6 +511,24 @@ class HostingBot(discord.Client):
                         await self.bind_message(message)
                     else:
                         await self.permission_failure(message)
+                elif argv[1] == 'url-embeds':
+                    if self.has_permission(message):
+                        try:
+                            value = int(argv[2])
+                            if value < -1:
+                                raise Exception("Value out of bounds")
+                            self.url_embed_count = value
+                            if value == -1:
+                                await message.channel.send("I will allow all embeds on descriptions")
+                            else:
+                                await message.channel.send("I will only allow " + str(value) + " embeds on descriptions")
+                        except Exception as e:
+                            await message.channel.send(
+                                "I didn't understand that, I need a a natrual number " +
+                                "between -1 (unlimited), and 10" 
+                            )
+                    else:
+                        await self.permission_failure(message)
                 elif argv[1] == 'unbind':
                     if self.has_permission(message):
                         self.binded_message = None
@@ -571,8 +604,8 @@ class HostingBot(discord.Client):
                 # selects the map and send it to rl
                 # also prints the selected map info
                 elif argv[1] == 'map':
-                    # if not self.companion_plugin_connected:
-                    #     await message.channel.send("RL is not running")
+                    if not self.companion_plugin_connected:
+                        await message.channel.send("RL is not running")
                     if self.admin_locked and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
@@ -649,11 +682,18 @@ class HostingBot(discord.Client):
             author = self.master_map_list[file_name]['author']
             description = self.master_map_list[file_name]['description']
             await self.attempt_to_sendRL('rp map ' + file_name.replace(".udk", ""))
+            embed_counter = 0
+            matches = re.findall(self.url_pattern, description)
+            for i in range(0, len(matches)):
+                if embed_counter < self.url_embed_count  or self.url_embed_count < 0:
+                    embed_counter += 1
+                    url = matches[i]
+                    description = description.replace(url, url[1:-1])
             message_str = ("Map sent to game:\n" +
                 "**" + title + "**\n" +
                 "**By: " + author + "**\n" + 
                 "*file: " + file_name + "*\n\n" + description)
-            await message.edit(content=message_str)
+            message = await message.edit(content=message_str)
         except Exception as e:
             await message.edit(content="Sorry, I couldn't find that map :(")
     
@@ -805,7 +845,7 @@ class HostingBot(discord.Client):
             for active_message, mutator_category in self.active_mutator_messages:
                 if reaction.message.id == active_message.id:
                     is_my_message = True
-                    mutator = mutator_category # TODO add break
+                    mutator = mutator_category
                     break
             # this is fine since the reaction is actually
             # saved in on_reaction_add for earlier anaylsis
@@ -972,6 +1012,9 @@ class HostingBot(discord.Client):
                 self.base_command +
                 " unlock*\n"+
                 "\tThis will undo the lock command:\n\tArgs: None\n\n"+
+                self.base_command +
+                " url-embeds*\n"+
+                "\tThis changes the number of embeds on a description message:\n\tArgs: [integer]\n\n"+
                 self.base_command +
                 " **help**\n"+
                 "\tPrints list of commands:\n\tArgs: None\n\n"
@@ -1220,11 +1263,11 @@ class HostingBot(discord.Client):
         Returns:
             argv [list]: Contains each seperate word
         """
-        if not self.pattern:
-            self.pattern = re.compile(self.str_pattern)
+        if not self.command_pattern:
+            self.command_pattern = re.compile(STR_COMMAND_PATTERN)
         argv = []
         none_matched = True
-        for match in re.finditer(self.pattern, line):
+        for match in re.finditer(self.command_pattern, line):
             if none_matched:
                 none_matched = False
             argv.append(match.group(0).rstrip())
@@ -1246,6 +1289,7 @@ class HostingBot(discord.Client):
                 self.binded_message_channel = dictionary['bindChannel']
                 self.listening_channels = dictionary['listeningChannels']
                 self.ip_address = dictionary['IP_address']
+                self.url_embed_count = dictionary['url_embed_count']
                 if self.print_statements:
                     print('File loaded')
                     pprint(dictionary)
@@ -1279,6 +1323,7 @@ class HostingBot(discord.Client):
         dictionary['bindChannel'] = copy.deepcopy(self.binded_message_channel)
         dictionary['listeningChannels'] = copy.deepcopy(self.listening_channels)
         dictionary['IP_address'] = copy.deepcopy(self.ip_address)
+        dictionary['url_embed_count'] = copy.deepcopy(self.url_embed_count)
         return dictionary
 
     def __background_loop(self):

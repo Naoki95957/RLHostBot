@@ -2,6 +2,7 @@ import os
 import re
 from pathlib import Path
 import selenium
+from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
@@ -10,11 +11,12 @@ from selenium.webdriver.common.by import By
 import json
 
 # A quick little scraper I threw togther to get map info from steam workshop
-# it also does analysis from leth's maps
+# it also does some basic analysis from leth's maps
 
+# if a map is removed/timedout from steam, it'll mark the map as a txt file 
+# preventing other processes from using it
 
-URL = "https://steamcommunity.com/sharedfiles/filedetails/?id=" 
-DIR = "Z:\\rocketLeagueMaps"
+WORKSHOP_URL = "https://steamcommunity.com/sharedfiles/filedetails/?id="
 CHROME_DRIVER = './win_chromedriver89.exe'
 
 class WebThingy:
@@ -35,13 +37,15 @@ class WebThingy:
     def __del__(self):
         self.driver.quit()
 
-    def clear_actions(self, action_chain):
-        action_chain.w3c_actions.devices[0].clear_actions()
-        action_chain.w3c_actions.devices[1].clear_actions()
-
     def set_url(self, url):
         self.my_url = url
         self.driver.get(self.my_url)
+    
+    def clean_url(self, url: str) -> str:
+        '''
+        This just removes the link filter if any
+        '''
+        return url.replace("https://steamcommunity.com/linkfilter/?url=", "")
 
     def start(self):
         clean_str = lambda string : str(re.sub(r"^\s+", '', string))
@@ -52,25 +56,52 @@ class WebThingy:
         author_element = soup.find('div', {'class':'friendBlockContent'})
         title_element = soup.find('div', {'class':'workshopItemTitle'})
         description_element = soup.find('div', {'class':'workshopItemDescription', 'id':'highlightContent'})
+        # get rid of these for loops if you don't want the discord markup
+        for a in description_element.findAll('a'):
+            # if the hyperlink is literally like this:
+            # <a href='something.com'>something.com</a>
+            if a.get_text() == a['href']:
+                a.replace_with("<" + self.clean_url(a.get_text()) + ">")
+            # otherwise get the hyperink
+            else:
+                a.replace_with(a.get_text() + ": <" + self.clean_url(a['href']) + ">")
+        for b in description_element.findAll('b'):
+            b.replace_with("**" + b.get_text() + "**")
+        for u in description_element.findAll('u'):
+            u.replace_with("__" + u.get_text() + "__")
+        for i in description_element.findAll('i'):
+            i.replace_with("*" + i.get_text() + "*")
         author = clean_str(author_element.contents[0])
         title = clean_str(title_element.contents[0])
         desc = description_element.get_text('\n')
         return (title, author, desc)
 
 def main():
+    load_dotenv('./config.env')
+    rl_dir = os.getenv("CUSTOM_PATH")
     map_index = {}
     counter = 0
     scraper = None
-    for root, dirs, files in os.walk(DIR):
+    for root, dirs, files in os.walk(rl_dir):
         for file in files:
             if file.endswith('.udk'):
                 map_index[file] = {}
+                # steam maps
                 if os.path.basename(root).isnumeric():
-                    if scraper:
-                        scraper.set_url(URL + os.path.basename(root))
-                    else:
-                        scraper = WebThingy(URL + os.path.basename(root))
-                    results = scraper.start()
+                    try:
+                        if scraper:
+                            scraper.set_url(WORKSHOP_URL + os.path.basename(root))
+                        else:
+                            scraper = WebThingy(WORKSHOP_URL + os.path.basename(root))
+                        results = scraper.start()
+                    except Exception as e:
+                        # be aware that you'll have to deal with these scenarios
+                        # (you can choose to find the info urself, delete the map, etc)
+                        # before you can run this again
+                        print("DROPPED STEAM MAP -> " + os.path.basename(root))
+                        os.rename(os.path.join(root, file), os.path.join(root, file + "(ERROR).txt"))
+                        counter += 1
+                        continue
                     map_index[file]['title'] = results[0]
                     map_index[file]['author'] = results[1]
                     map_index[file]['description'] = results[2]
@@ -88,7 +119,7 @@ def main():
                     counter += 1
                     print(counter, "maps compete")
     json_str = json.dumps(map_index)
-    file = open("map_info.json", 'w')
+    file = open("./map_info.json", 'w')
     file.write(json_str)
     file.close()
     
