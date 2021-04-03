@@ -1107,7 +1107,7 @@ class HostingBot(discord.Client):
             title = "Current Game"
             self.players_connected = len(self.match_data['teams'][0]['players']) + len(self.match_data['teams'][1]['players'])
             match_time = timedelta(seconds=int(self.match_data['matchlength']))
-            passed_time = timedelta(seconds=float(self.match_data['gametime']))
+            passed_time = timedelta(seconds=round(float(self.match_data['gametime'])))
 
             if self.match_data['overtime']:
                 title += " - Over Time"
@@ -1121,6 +1121,9 @@ class HostingBot(discord.Client):
             embed_var = discord.Embed(
                 title=title
             )
+            # TODO possibly translate map with dict?
+            # map dict is large and takes time so
+            # it's a maybe that currently leans on no
             embed_var.add_field(name="Map:", value=self.match_data['map'])
             embed_var.add_field(name="Match Length:", value=str(match_time), inline=False)
             embed_var.add_field(name="Duration:", value=str(passed_time), inline=False)
