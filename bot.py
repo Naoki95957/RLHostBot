@@ -41,9 +41,10 @@ from pprint import pprint
 # how many seconds you would like to get updates
 PLUGIN_FREQUENCY = 5
 
-# how long game will go to main menu once game is over to avoid long lobby times
+# how long game will idle with no players before going to main menu 
 # time would be IDLE_COUNT * PLUGIN_FREQUENCY seconds
-IDLE_COUNT = 60
+# so 120 would be 10min
+IDLE_COUNT = 120
 
 # Will always attempt to link the plugin
 ALWAYS_RECONNECT = True
