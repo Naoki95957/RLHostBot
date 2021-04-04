@@ -2,7 +2,6 @@ from datetime import timedelta
 import os
 from os import path
 from discord.ext import tasks
-import sys
 import subprocess
 import math
 import asyncio
@@ -208,6 +207,7 @@ MUTATOR_VALUE_DICTIONARY = {
     "TA1" : "Hoops",
     "TA2" : "Snow Day",
     "TA3" : "Rumble",
+    # what could possibly be category 4?? idk
     "TA5" : "Dropshot",
     "TA6" : "Heatseeker",
     # free play
@@ -317,9 +317,10 @@ EMOTE_OPTIONS = [
     '🇬', '🇭',
     '🇮', '🇯',
     '🇰', '🇱'
-]
 
+]
 VOTE_TO_PASS_EMOTE = "🗳️"
+REPEAT_MUTATOR_EMOTE = "🔁"
 
 # This json is in the form:
 # "file.udk" : {"title":"my custom map", "author":"by me", "description":"don't use plz"}
@@ -353,13 +354,14 @@ class HostingBot(discord.Client):
     url_pattern = None
     master_map_list = None
 
-    # match stuff
+    # bot/match global stuff
     active_mutator_messages = []
     stop_adding_reactions = False
     in_reactions = False
     current_reaction = None
     admin_locked = False
     match_request_message = None
+    last_mutator_message = None
     
     file = "./bot_stuff.p"
     background_timer = 15 # how frequently background tasks will be executed
@@ -524,11 +526,13 @@ class HostingBot(discord.Client):
                         await self.remove_permit_command(message)
                     else:
                         await self.permission_failure(message)
+                # attach scoreboard to the channel it's called on
                 elif argv[1] == 'bind':
                     if self.has_permission(message):
                         await self.bind_message(message)
                     else:
                         await self.permission_failure(message)
+                # limit the number of embeds shown on descriptions
                 elif argv[1] == 'url-embeds':
                     if self.has_permission(message):
                         try:
@@ -542,11 +546,12 @@ class HostingBot(discord.Client):
                                 await message.channel.send("I will only allow " + str(value) + " embeds on descriptions")
                         except Exception as e:
                             await message.channel.send(
-                                "I didn't understand that, I need a a natrual number " +
+                                "I didn't understand that, I need a natrual number " +
                                 "between -1 (unlimited), and 10" 
                             )
                     else:
                         await self.permission_failure(message)
+                # drops the attachment to any currently set 'scoreboard' message
                 elif argv[1] == 'unbind':
                     if self.has_permission(message):
                         self.binded_message = None
@@ -624,7 +629,7 @@ class HostingBot(discord.Client):
                 elif argv[1] == 'map':
                     if not self.companion_plugin_connected:
                         await message.channel.send("RL is not running")
-                    if self.admin_locked and not self.has_permission(message):
+                    elif self.admin_locked and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         await self.send_selected_map(argv[2], message.channel)
@@ -674,13 +679,15 @@ class HostingBot(discord.Client):
                                 await message.channel.send("Sent instructions to game")
                         else:
                             await self.permission_failure(message)
-                # link companion plugin for info
+                # TODO set up an option to find ip
+                # sets up the ip that the host will relay
                 elif argv[1] == 'setIP':
                     if self.has_permission(message):
                         self.ip_address = str(argv[2]).replace("\"", "")
                         await message.channel.send("IP address is now set up as: " + self.ip_address)
                     else:
                         await self.permission_failure(message)
+                # link companion plugin for info
                 elif argv[1] == 'link-plugin':
                     if self.has_permission(message):
                         self.reconnect = True
@@ -733,6 +740,10 @@ class HostingBot(discord.Client):
             
 
     async def handle_mutators(self, argv: list, channel: discord.TextChannel):
+        SUCCESS_MESSAGE = (
+            "Sent mutator to game. If you wish to send " + 
+            "another you can react with the " + REPEAT_MUTATOR_EMOTE + " emote")
+
         self.stop_adding_reactions = False
         if len(argv) > 2:
             argv[2] = argv[2].replace("\"", "")
@@ -742,22 +753,23 @@ class HostingBot(discord.Client):
                     break
             if len(argv) > 3:
                 argv[3] = argv[3].replace("\"", "")
+                successful_message = None
                 # default or default name
                 if argv[3].lower() == "default" or ('Default' in MUTATORS[argv[2]] and argv[3].lower() == MUTATORS[argv[2]]['Default'].lower()):
                     await self.attempt_to_sendRL("rp mutator " + argv[2] + " \\\"\\\"")
                     await self.clear_active_messages()
-                    await channel.send("Sent mutator to game")
+                    successful_message = await channel.send(SUCCESS_MESSAGE)
                 # direct key matching (they have to be devs to know this... but I'll leave it in here I guess)
                 elif argv[3].lower() in (string.lower() for string in MUTATORS[argv[2]]):
                     # The game mode isn't exactly a mutator so it needs a different command sent
                     if argv[2].lower() == "TAGame" or argv[2] == "Game Mode":
                         await self.attempt_to_sendRL("rp mode \"" + argv[3] + "\"")
                         await self.clear_active_messages()
-                        await channel.send("Sent mutator to game")
+                        successful_message = await channel.send(SUCCESS_MESSAGE)
                     else:
                         await self.attempt_to_sendRL("rp mutator \"" + argv[2] + "\" \"" + argv[3] + "\"")
                         await self.clear_active_messages()
-                        await channel.send("Sent mutator to game")
+                        successful_message = await channel.send(SUCCESS_MESSAGE)
                 # else detect if arg3 is of the variant name to some key
                 else:
                     # check if it's just a matching term to one of the raw values
@@ -775,15 +787,18 @@ class HostingBot(discord.Client):
                         if argv[2].lower() == "TAGame".lower() or argv[2] == "Game Mode".lower():
                             await self.attempt_to_sendRL("rp mode \"" + argv[3] + "\"")
                             await self.clear_active_messages()
-                            await channel.send("Sent mutator to game")
+                            successful_message = await channel.send(SUCCESS_MESSAGE)
                         else:
                             await self.attempt_to_sendRL("rp mutator \"" + argv[2] + "\" \"" + argv[3] + "\"")
                             await self.clear_active_messages()
-                            await channel.send("Sent mutator to game")
+                            successful_message = await channel.send(SUCCESS_MESSAGE)
                     else:
                         await channel.send("Sorry I didn't understand that...")
                         # call back message down to the point where we didn't understand it to reload the prompt
                         await self.handle_mutators([argv[0], argv[1], argv[2]], channel)
+                if successful_message:
+                    self.last_mutator_message = successful_message
+                    await successful_message.add_reaction(REPEAT_MUTATOR_EMOTE)
             else:
                 # print the values
                 options = ""
@@ -858,11 +873,21 @@ class HostingBot(discord.Client):
 
     async def on_reaction_add(self, reaction: discord.reaction.Reaction, user: discord.user.User):
         # if bot is tracking messages
+        # This is used and needed to kill
+        # mutator messages if they are running
         if int(self.bot_id) != user.id:
             self.current_reaction = reaction
+            # this is for the redo operation in mutator
+            if (
+                (self.last_mutator_message) and
+                reaction.message.id == self.last_mutator_message.id
+            ):
+                await self.handle_mutators(["", "mutator"], reaction.message.channel)
         if (self.active_mutator_messages or self.vote_listing) and int(self.bot_id) != user.id:
             # check if reaction is on one of the bots messages
             await self.handle_reaction(reaction)
+        
+
 
     async def handle_reaction(self, reaction: discord.reaction.Reaction, bypass=False, mutator=None):
         # check if this is about the host voting
