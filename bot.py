@@ -588,10 +588,9 @@ class HostingBot(discord.Client):
                         await message.edit(content="Done")
                 # mutator passing
                 elif argv[1] == 'mutator':
-                    # TODO uncomment
-                    # if not self.companion_plugin_connected:
-                    #     await message.channel.send("RL is not running")
-                    if self.is_admin_locked() and not self.has_permission(message):
+                    if not self.companion_plugin_connected:
+                        await message.channel.send("RL is not running")
+                    elif self.is_admin_locked() and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         try:
