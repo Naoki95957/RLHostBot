@@ -2,6 +2,7 @@ from datetime import timedelta
 import os
 from os import path
 from discord.ext import tasks
+import win32gui, win32con
 import threading
 import subprocess
 import math
@@ -578,6 +579,8 @@ class HostingBot(discord.Client):
                         time.sleep(20)
                         # TODO may not need to do this if I publish my plugin
                         # will need to rename the plugin for sure lol
+                        Minimize = win32gui.GetForegroundWindow()
+                        win32gui.ShowWindow(Minimize, win32con.SW_MINIMIZE)
                         await self.attempt_to_sendRL("plugin load plugin2")
                         time.sleep(1)
                         await self.attempt_to_sendRL("hcp start_rp")
