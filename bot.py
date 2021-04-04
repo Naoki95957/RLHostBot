@@ -39,6 +39,7 @@ from pprint import pprint
 # fix fugly code
 
 # how many seconds you would like to get updates
+# on the scoreboard
 PLUGIN_FREQUENCY = 5
 
 # how long game will idle with no players before going to main menu 
@@ -47,9 +48,12 @@ PLUGIN_FREQUENCY = 5
 IDLE_COUNT = 120
 
 # Will always attempt to link the plugin
+# it's best to leave this on
 ALWAYS_RECONNECT = True
 
 # used to divide up the massive amount of mutators into multiple messages
+# Minimum is 2! this is bc the max reactions you can have is 20
+# and there are 24 reactions in total needed
 MUTATOR_MESSAGES = 2
 
 # This is used to let the bot know when is a safe time to call on rcon and bakkes
@@ -61,6 +65,12 @@ GAME_LOAD_TIME = 20
 # say value_names : [...]?
 # "Mutator" : : {"emote" : ":emoji:", "values" : ["value0", "value1", ...], "value_names" : ["<meaning>", ...]}
 MUTATORS = {
+    # TAGame is custom written and modded in
+    "TAGame" : {
+        "alt_name" : "Game Mode",
+        "emote" : "🎮",
+        "values" : [ "TA0", "TA1", "TA2", "TA3", "TA5", "TA6"],
+    },
     "FreePlay" : {
         "alt_name" : "Free Play",
         "emote" : "🆓",
@@ -193,6 +203,13 @@ MUTATORS = {
 # This translate the raw 'value' (except defaults) for the mutators to something more understandable
 # Default is left out since the actual value is "", literally \"\"
 MUTATOR_VALUE_DICTIONARY = {
+    # game modes
+    "TA0" : "Soccar", 
+    "TA1" : "Hoops",
+    "TA2" : "Snow Day",
+    "TA3" : "Rumble",
+    "TA5" : "Dropshot",
+    "TA6" : "Heatseeker",
     # free play
     "FreePlay" : "Enable Freeplay",
     # match length
@@ -732,9 +749,15 @@ class HostingBot(discord.Client):
                     await channel.send("Sent mutator to game")
                 # direct key matching (they have to be devs to know this... but I'll leave it in here I guess)
                 elif argv[3].lower() in (string.lower() for string in MUTATORS[argv[2]]):
-                    await self.attempt_to_sendRL("rp mutator \"" + argv[2] + "\" \"" + argv[3] + "\"")
-                    await self.clear_active_messages()
-                    await channel.send("Sent mutator to game")
+                    # The game mode isn't exactly a mutator so it needs a different command sent
+                    if argv[2].lower() == "TAGame" or argv[2] == "Game Mode":
+                        await self.attempt_to_sendRL("rp mode \"" + argv[3] + "\"")
+                        await self.clear_active_messages()
+                        await channel.send("Sent mutator to game")
+                    else:
+                        await self.attempt_to_sendRL("rp mutator \"" + argv[2] + "\" \"" + argv[3] + "\"")
+                        await self.clear_active_messages()
+                        await channel.send("Sent mutator to game")
                 # else detect if arg3 is of the variant name to some key
                 else:
                     # check if it's just a matching term to one of the raw values
@@ -746,11 +769,17 @@ class HostingBot(discord.Client):
                                 argv[3] = key
                                 found = True
                                 break
+                    # successful match
                     if found:
-                        # success
-                        await self.attempt_to_sendRL("rp mutator \"" + argv[2] + "\" \"" + argv[3] + "\"")
-                        await self.clear_active_messages()
-                        await channel.send("Sent mutator to game")
+                        # The game mode isn't exactly a mutator so it needs a different command sent
+                        if argv[2].lower() == "TAGame".lower() or argv[2] == "Game Mode".lower():
+                            await self.attempt_to_sendRL("rp mode \"" + argv[3] + "\"")
+                            await self.clear_active_messages()
+                            await channel.send("Sent mutator to game")
+                        else:
+                            await self.attempt_to_sendRL("rp mutator \"" + argv[2] + "\" \"" + argv[3] + "\"")
+                            await self.clear_active_messages()
+                            await channel.send("Sent mutator to game")
                     else:
                         await channel.send("Sorry I didn't understand that...")
                         # call back message down to the point where we didn't understand it to reload the prompt
