@@ -2,6 +2,7 @@ from datetime import timedelta
 import os
 from os import path
 from discord.ext import tasks
+import threading
 import subprocess
 import math
 import asyncio
@@ -353,6 +354,7 @@ class HostingBot(discord.Client):
     vote_listing = None
     url_pattern = None
     master_map_list = None
+    members_list = None
 
     # bot/match global stuff
     active_mutator_messages = []
@@ -362,6 +364,7 @@ class HostingBot(discord.Client):
     admin_locked = False
     match_request_message = None
     last_mutator_message = None
+    admin_t_lock = threading.Lock()
     
     file = "./bot_stuff.p"
     background_timer = 15 # how frequently background tasks will be executed
@@ -455,6 +458,7 @@ class HostingBot(discord.Client):
                     f'\nRoles in order: {guild.roles}'
                 )
             self.roles.extend(guild.roles)
+        self.members_list = self.get_all_members()
         await HostingBot.change_presence(self, activity=discord.Activity(type=discord.ActivityType.listening, name="others play Rocket League"))
 
     async def on_message(self, message: discord.message.Message):
@@ -497,20 +501,22 @@ class HostingBot(discord.Client):
                 # Lock is to allow an admin to use the bot for events etc
                 elif argv[1] == 'lock':
                     if self.has_permission(message):
-                        self.admin_locked = True
+                        with self.admin_t_lock:
+                            self.admin_locked = True
                         await message.channel.send("Editing commands locked")
                     else:
                         await self.permission_failure(message)
                 # unlock reverses the lock -> to allow players to use the bot again
                 elif argv[1] == 'unlock':
                     if self.has_permission(message):
-                        self.admin_unlocked = False
+                        with self.admin_t_lock:
+                            self.admin_locked = False
                         await message.channel.send("Editing commands unlocked")
                     else:
                         await self.permission_failure(message)
                 # lists maps known to the bot
                 elif argv[1] == 'list-maps':
-                    if self.admin_locked and not self.has_permission(message):
+                    if self.is_admin_locked() and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         await self.list_maps(message)
@@ -564,7 +570,7 @@ class HostingBot(discord.Client):
                 elif argv[1] == 'start':
                     if self.companion_plugin_connected:
                         await message.channel.send("RL is already running")
-                    elif self.admin_locked and not self.has_permission(message):
+                    elif self.is_admin_locked() and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         message = await message.channel.send("Working on it ...")
@@ -582,9 +588,10 @@ class HostingBot(discord.Client):
                         await message.edit(content="Done")
                 # mutator passing
                 elif argv[1] == 'mutator':
-                    if not self.companion_plugin_connected:
-                        await message.channel.send("RL is not running")
-                    elif self.admin_locked and not self.has_permission(message):
+                    # TODO uncomment
+                    # if not self.companion_plugin_connected:
+                    #     await message.channel.send("RL is not running")
+                    if self.is_admin_locked() and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         try:
@@ -596,7 +603,7 @@ class HostingBot(discord.Client):
                 elif argv[1] == 'preset':
                     if not self.companion_plugin_connected:
                         await message.channel.send("RL is not running")
-                    elif self.admin_locked and not self.has_permission(message):
+                    elif self.is_admin_locked() and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         try:
@@ -629,7 +636,7 @@ class HostingBot(discord.Client):
                 elif argv[1] == 'map':
                     if not self.companion_plugin_connected:
                         await message.channel.send("RL is not running")
-                    elif self.admin_locked and not self.has_permission(message):
+                    elif self.is_admin_locked() and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         await self.send_selected_map(argv[2], message.channel)
@@ -637,7 +644,7 @@ class HostingBot(discord.Client):
                 elif argv[1] == 'host':
                     if not self.companion_plugin_connected:
                         await message.channel.send("RL is not running")
-                    elif self.admin_locked and not self.has_permission(message):
+                    elif self.is_admin_locked() and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         await self.attempt_to_host(message.channel)
@@ -876,18 +883,40 @@ class HostingBot(discord.Client):
         # This is used and needed to kill
         # mutator messages if they are running
         if int(self.bot_id) != user.id:
-            self.current_reaction = reaction
-            # this is for the redo operation in mutator
-            if (
-                (self.last_mutator_message) and
-                reaction.message.id == self.last_mutator_message.id
-            ):
-                await self.handle_mutators(["", "mutator"], reaction.message.channel)
-        if (self.active_mutator_messages or self.vote_listing) and int(self.bot_id) != user.id:
-            # check if reaction is on one of the bots messages
-            await self.handle_reaction(reaction)
-        
-
+            if self.is_admin_locked():
+                # yes this is redundant but it's expensive and I only want to do this when I HAVE to
+                allowed_members = []
+                for member in self.members_list:
+                    if member.top_role.id in self.permitted_roles:
+                        allowed_members.append(member.id)
+                if user.id in allowed_members:
+                    self.current_reaction = reaction
+                    # this is for the redo operation in mutator
+                    if (
+                        (self.last_mutator_message) and
+                        reaction.message.id == self.last_mutator_message.id
+                    ):
+                        await self.handle_mutators(["", "mutator"], reaction.message.channel)
+                    elif (self.active_mutator_messages or self.vote_listing) and int(self.bot_id) != user.id:
+                        # check if reaction is on one of the bots messages
+                        await self.handle_reaction(reaction)
+                else:
+                    await reaction.message.channel.send("Sorry <@{0}>, commands are locked right now".format(user.id))
+            else:
+                self.current_reaction = reaction
+                # this is for the redo operation in mutator
+                if (
+                    (self.last_mutator_message) and
+                    reaction.message.id == self.last_mutator_message.id
+                ):
+                    await self.handle_mutators(["", "mutator"], reaction.message.channel)
+                elif (self.active_mutator_messages or self.vote_listing) and int(self.bot_id) != user.id:
+                    # check if reaction is on one of the bots messages
+                    await self.handle_reaction(reaction)
+            
+    def is_admin_locked(self) -> bool:
+        with self.admin_t_lock:
+            return self.admin_locked
 
     async def handle_reaction(self, reaction: discord.reaction.Reaction, bypass=False, mutator=None):
         # check if this is about the host voting
@@ -1099,7 +1128,7 @@ class HostingBot(discord.Client):
                 "\tPrints list of commands:\n\tArgs: None\n\n"
             )
         embed_var = discord.Embed(title="Commands", description=desc)
-        if self.admin_locked and not has_permission:
+        if self.is_admin_locked() and not has_permission:
             embed_var.add_field(name="Commands are currently locked", value="You'll need a person with special access to unlock them", inline=False)
         embed_var.add_field(name="commands with a *", value="can only be executed by those with permissions", inline=False)
         embed_var.add_field(name="ALL COMMAND ARGUMENTS MUST BE SINGLE WORD", value="if there is whitespace, use double qoutes -> \"my arg\"", inline=False)
