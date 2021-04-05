@@ -61,6 +61,9 @@ MUTATOR_MESSAGES = 2
 # This is also kind of arbitrary since it depends on fast you load the game
 GAME_LOAD_TIME = 20
 
+# I'm adding this since it would appear that some use strictly upk files.
+MAP_EXTENSION_TYPE = ".udk"
+
 # TODO Move the into a JSON maybe?
 # "Mutator" : : {"emote" : ":emoji:", "values" : ["value0", "value1", ...], "val_names" : ["<meaning>", ...]}
 MUTATORS = {
@@ -584,7 +587,7 @@ class HostingBot(discord.Client):
             title = self.master_map_list[file_name]['title']
             author = self.master_map_list[file_name]['author']
             description = self.master_map_list[file_name]['description']
-            await self.attempt_to_sendRL('rp map ' + file_name.replace(".udk", ""))
+            await self.attempt_to_sendRL('rp map ' + file_name.replace(MAP_EXTENSION_TYPE, ""))
             embed_counter = 0
             matches = re.findall(self.url_pattern, description)
             for i in range(0, len(matches)):
@@ -1109,7 +1112,7 @@ class HostingBot(discord.Client):
         # subprocess.Popen([sys.executable, "./map_scraper.py"])
         for root, dirs, files in os.walk(self.custom_path):
             for file in files:
-                if file.endswith('.udk'):
+                if file.endswith(MAP_EXTENSION_TYPE):
                     list_name = self.master_map_list[file]['title']
                     iteration = 0
                     while (list_name in map_index.keys()):
