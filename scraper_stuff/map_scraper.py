@@ -20,10 +20,16 @@ import json
 # It assumes it will find a combo of leth maps in their folders as if you downloaded and extracted them
 # and steam workshop maps in their folders as if you downloaded and extracted them
 # IE:
-# 2298425323
-# |
-# ┕
+# Steam maps have this format -> in the folder '1246337892':
+#   greenscreen_p.udk
+#   prev2.jpg
+#   preview.jpg
+#   WorkshopItemInfo.JSON
 # 
+# and for leth -> in the folder 'Beach Brawl':
+#   BeachBrawl.jpg
+#   info.json
+#   LethBeachBrawl.udk
 
 WORKSHOP_URL = "https://steamcommunity.com/sharedfiles/filedetails/?id="
 CHROME_DRIVER = './win_chromedriver89.exe'
