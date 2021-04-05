@@ -16,6 +16,9 @@ import json
 # if a map is removed/timedout from steam, it'll mark the map as a txt file 
 # preventing other processes from using it
 
+# It assumes well find a combo of leth maps in their folders
+# and steam workshop maps in their folders
+
 WORKSHOP_URL = "https://steamcommunity.com/sharedfiles/filedetails/?id="
 CHROME_DRIVER = './win_chromedriver89.exe'
 
