@@ -25,7 +25,10 @@ this is defined by you based on the game settings and isn't working via
 plugins at the moment. To set up a password, start a local lan match with
 a password, and that will save it. Ideally this will be removed and can be
 auto-generated per match or defined by discord commands but for now this is
-the best we go
+the best we go.
+
+If you wish to change the rcon password, you can change this with bakkesconsole:
+`rcon_password "new password"`
 
 You will need to install the 2 provided plugins for now as well. To do this
 put it in your `...bakkesmod/plugins` folder. Eventually Rocket Plugin will support
@@ -55,6 +58,7 @@ Assuming everything is configured and ready to go:
 - [x] Bakkesmod
 - [x] config.env
 - [x] Python + packages 
+- [x] Reconfigured rcon whitelist
 - [x] RLHBotCompanion.dll
 - [x] moddedRP.dll
 - [x] It's advisable to intsall netcode
