@@ -75,7 +75,7 @@ Assuming everything is configured and ready to go:
 - [x] Reconfigured rcon whitelist
 - [x] RLHBotCompanion.dll
 - [x] moddedRP.dll
-- [x] It's advisable to intsall netcode
+- [x] It's advisable to intsall netcode due to some maps needing it
 
 You should be able to run `python main.py` or `python bot.py` for now.
 I plan on having a terminal like back door but until then, you can run in debug mode
