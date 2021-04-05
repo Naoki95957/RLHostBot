@@ -1,5 +1,5 @@
 from bot import HostingBot
-from bot_terminal import BotTerminal
+# from bot_terminal import BotTerminal
 
 def main():
     bot = HostingBot(print_statements=True)
