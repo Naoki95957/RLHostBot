@@ -87,5 +87,5 @@ There is a provided scraper for map information gathering as it'll will occasion
 but is not necessary if you plan on adding a limited number of maps. These files, including a chrome driver for version 89
 is included in `scraper_stuff`
 
-map_info.json and your maps directory need to be in sync. If it doesn't find the map in the json, it will not pick it up.
+map_info.json and your maps directory should be in sync. Without them it'll just list path/file.
 Map files are assumed all `.udk` files
