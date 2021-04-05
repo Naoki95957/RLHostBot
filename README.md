@@ -16,7 +16,7 @@ The idea is that you have another computer or server with a copy of rocket leagu
   BOT_ID=this is the id of the bot
   MY_ID=this is the id of the owner (basically going to serve as an admin)
   DISCORD_TOKEN=secret token provided form discord
-  BAKKES_SERVER=ws://127.0.0.1:9002 (IP:port, the provided is default)
+  BAKKES_SERVER=ws://127.0.0.1:9002 (ws[WebSocket]://IP:port, the provided is default)
   RCON_PASSWORD=password (rcon password, again this is default)
   RL_PATH=(path to RL exe)
   CUSTOM_PATH=(path to custom maps)
@@ -42,11 +42,12 @@ The idea is that you have another computer or server with a copy of rocket leagu
   ```
 
   #### Plugins
-  You will need to install the 2 provided plugins for now as well. To do this
-  put it in your `...bakkesmod/plugins` folder. Eventually Rocket Plugin will support
-  hosting from command but until this all that we have is a quick mod I wrote up.
-  The other plugin I might plublish sooner or later but it is also needed to get status
-  updates on the game.
+  You will need to install the 2 provided plugins for now as well. 
+  You will need to manually install `RLHBotCompanion.dll` and `moddedRP.dll`
+  To do this put it in your `...bakkesmod/plugins` folder. Eventually Rocket Plugin
+  will support hosting from command but until this all that we have is a quick mod
+  I wrote up. The other plugin I might plublish sooner or later but it is also
+  needed to get status updates on the game.
 
 ### Python
 To install all the necessary packages run:
