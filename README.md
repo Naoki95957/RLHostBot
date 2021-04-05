@@ -49,6 +49,8 @@ The idea is that you have another computer or server with a copy of rocket leagu
   folder. Eventually Rocket Plugin will support hosting from command but until this
   all that we have is a quick mod I wrote up. The other plugin I might plublish
   sooner or later but it is also needed to get status updates on the game.
+  If you don't have cpp installed you will likely need this too:
+  https://aka.ms/vs/16/release/vc_redist.x64.exe
 
 ### Python
 To install all the necessary packages run:
@@ -85,3 +87,5 @@ There is a provided scraper for map information gathering as it'll will occasion
 but is not necessary if you plan on adding a limited number of maps. These files, including a chrome driver for version 89
 is included in `scraper_stuff`
 
+map_info.json and your maps directory need to be in sync. If it doesn't find the map in the json, it will not pick it up.
+Map files are assumed all `.udk` files
