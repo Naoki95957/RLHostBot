@@ -454,9 +454,13 @@ class HostingBot(discord.Client):
                         time.sleep(20)
                         # minimize window to help lower-end gpus
                         win32gui.ShowWindow(win32gui.GetForegroundWindow(), win32con.SW_MINIMIZE)
+                        await self.attempt_to_sendRL("plugin unload RocketPlugin")
+                        time.sleep(1)
+                        await self.attempt_to_sendRL("plugin load moddedRP")
+                        time.sleep(1)
                         # TODO may not need to do this if I publish my plugin
                         # will need to rename the plugin for sure lol
-                        await self.attempt_to_sendRL("plugin load plugin2")
+                        await self.attempt_to_sendRL("plugin load RLHBotCompanion")
                         time.sleep(1)
                         # starts up rocket plugin GUI
                         await self.attempt_to_sendRL("hcp start_rp")
