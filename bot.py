@@ -497,21 +497,9 @@ class HostingBot(discord.Client):
                 # selects the map and send it to rl
                 elif argv[1] == 'restart':
                     if self.has_permission(message):
-                        message = await message.channel.send("Working on it ...")
-                        await self.kill_game()
-                        time.sleep(5)
-                        await self.start_game()
-                        time.sleep(20)
-                        # TODO may not need to do this if I publish my plugin
-                        # will need to rename the plugin for sure lol
-                        await self.attempt_to_sendRL("plugin load plugin2")
+                        await self.handle_command([argv[0], 'killRL'], message)
                         time.sleep(1)
-                        await self.attempt_to_sendRL("hcp start_rp")
-                        time.sleep(1)
-                        await self.attempt_to_sendRL("rp_custom_path " + self.custom_path.replace("\\", "/"))
-                        time.sleep(1)
-                        self.reconnect = True
-                        await message.edit(content="Done")
+                        await self.handle_command([argv[0], 'start'], message)
                     else:
                         await self.permission_failure(message)
                 # selects the map and send it to rl
@@ -1358,6 +1346,7 @@ class HostingBot(discord.Client):
                             time.sleep(PLUGIN_FREQUENCY)
                 except Exception as e:
                     self.print("Failed to connect to RL")
+                    self.companion_plugin_connected = False
             self.match_data = {}
             time.sleep(5)
 
