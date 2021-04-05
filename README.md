@@ -9,32 +9,44 @@ The idea is that you have another computer or server with a copy of rocket leagu
 
 ### Files
 
-You'll need to configure an env file and an example is provided:
-```
-BOT_ID=this is the id of the bot
-MY_ID=this is the id of the owner (basically going to serve as an admin)
-DISCORD_TOKEN=secret token provided form discord
-BAKKES_SERVER=ws://127.0.0.1:9002 (IP:port, the provided is default)
-RCON_PASSWORD=password (rcon password, again this is default)
-RL_PATH=(path to RL exe)
-CUSTOM_PATH=(path to custom maps)
-GAME_PASSWORD=(this is predefined at the moment)
-```
-Note: GAME_PASSWORD is the password to join the game
-this is defined by you based on the game settings and isn't working via
-plugins at the moment. To set up a password, start a local lan match with
-a password, and that will save it. Ideally this will be removed and can be
-auto-generated per match or defined by discord commands but for now this is
-the best we go.
+  #### config.env
 
-If you wish to change the rcon password, you can change this with bakkesconsole:
-`rcon_password "new password"`
+  You'll need to configure an env file and an example is provided:
+  ```
+  BOT_ID=this is the id of the bot
+  MY_ID=this is the id of the owner (basically going to serve as an admin)
+  DISCORD_TOKEN=secret token provided form discord
+  BAKKES_SERVER=ws://127.0.0.1:9002 (IP:port, the provided is default)
+  RCON_PASSWORD=password (rcon password, again this is default)
+  RL_PATH=(path to RL exe)
+  CUSTOM_PATH=(path to custom maps)
+  GAME_PASSWORD=(this is predefined at the moment)
+  ```
+  Note: GAME_PASSWORD is the password to join the game
+  this is defined by you based on the game settings and isn't working via
+  plugins at the moment. To set up a password, start a local lan match with
+  a password, and that will save it. Ideally this will be removed and can be
+  auto-generated per match or defined by discord commands but for now this is
+  the best we go.
 
-You will need to install the 2 provided plugins for now as well. To do this
-put it in your `...bakkesmod/plugins` folder. Eventually Rocket Plugin will support
-hosting from command but until this all that we have is a quick mod I wrote up.
-The other plugin I might plublish sooner or later but it is also needed to get status
-updates on the game. 
+  If you wish to change the rcon password, you can change this with bakkesconsole:
+  `rcon_password "new password"`
+
+  #### rcon_commands.cfg
+  I've attached what commands I recommend whitelisting however you can do what you want. 
+  You will at the least need to add:
+  ```
+  hcp
+  rp
+  rp_custom_path
+  ```
+
+  #### Plugins
+  You will need to install the 2 provided plugins for now as well. To do this
+  put it in your `...bakkesmod/plugins` folder. Eventually Rocket Plugin will support
+  hosting from command but until this all that we have is a quick mod I wrote up.
+  The other plugin I might plublish sooner or later but it is also needed to get status
+  updates on the game.
 
 ### Python
 To install all the necessary packages run:
@@ -43,7 +55,7 @@ To install all the necessary packages run:
 If you wish to run the map_info.json scraper install all the necessary packages there too:
 `pip install -r scraper_reqs.txt`
 
-Note: if you are using a virtual python env like conda such as I am using
+Note: if you are using a virtual python env like conda (such as I am using),
 you may need to install some of these packages via anaconda:
 - `conda install -c anaconda pywin32`
 - `conda install -c conda-forge selenium`
