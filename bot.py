@@ -581,25 +581,31 @@ class HostingBot(discord.Client):
     async def send_selected_map(self, arg: str, channel: discord.TextChannel):
         try:
             message = await channel.send("Getting map info...")
+            arg = arg.replace("\"", "")
             # this should be the full path
-            file_path = self.custom_map_dictionary[arg.replace("\"", "")]
-            file_name = os.path.basename(file_path)
-            title = self.master_map_list[file_name]['title']
-            author = self.master_map_list[file_name]['author']
-            description = self.master_map_list[file_name]['description']
-            await self.attempt_to_sendRL('rp map ' + file_name.replace(MAP_EXTENSION_TYPE, ""))
-            embed_counter = 0
-            matches = re.findall(self.url_pattern, description)
-            for i in range(0, len(matches)):
-                if embed_counter < self.url_embed_count  or self.url_embed_count < 0:
-                    embed_counter += 1
-                    url = matches[i]
-                    description = description.replace(url, url[1:-1])
-            message_str = ("Map sent to game:\n" +
-                "**" + title + "**\n" +
-                "**By: " + author + "**\n" + 
-                "*file: " + file_name + "*\n\n" + description)
-            message = await message.edit(content=message_str)
+            if self.master_map_list and not arg.startswith("z-"):
+                file_path = self.custom_map_dictionary[arg]
+                file_name = os.path.basename(file_path)
+                title = self.master_map_list[file_name]['title']
+                author = self.master_map_list[file_name]['author']
+                description = self.master_map_list[file_name]['description']
+                await self.attempt_to_sendRL('rp map ' + file_name.replace(MAP_EXTENSION_TYPE, ""))
+                embed_counter = 0
+                matches = re.findall(self.url_pattern, description)
+                for i in range(0, len(matches)):
+                    if embed_counter < self.url_embed_count  or self.url_embed_count < 0:
+                        embed_counter += 1
+                        url = matches[i]
+                        description = description.replace(url, url[1:-1])
+                message_str = ("Map sent to game:\n" +
+                    "**" + title + "**\n" +
+                    "**By: " + author + "**\n" + 
+                    "*file: " + file_name + "*\n\n" + description)
+                message = await message.edit(content=message_str)
+            else:
+                message_str = ("Map sent to game. I have no info on the map however:\n"
+                    "***file: " + self.custom_map_dictionary[arg.replace("\"", "")] + "***")
+                message = await message.edit(content=message_str)
         except Exception as e:
             await message.edit(content="Sorry, I couldn't find that map :(")
     
@@ -1113,12 +1119,19 @@ class HostingBot(discord.Client):
         for root, dirs, files in os.walk(self.custom_path):
             for file in files:
                 if file.endswith(MAP_EXTENSION_TYPE):
-                    list_name = self.master_map_list[file]['title']
-                    iteration = 0
-                    while (list_name in map_index.keys()):
-                        iteration += 1
-                        list_name = self.master_map_list[file]['title'] + " (" + str(iteration) + ")"
-                    map_index[list_name] = os.path.join(root, file)
+                    if self.master_map_list:
+                        list_name = self.master_map_list[file]['title']
+                        iteration = 0
+                        if (
+                                list_name in map_index.keys() and
+                                os.path.getsize(map_index[list_name]) == os.path.getsize(os.path.join(root, file))
+                            ):
+                            continue
+                        while (list_name in map_index.keys()):
+                            list_name = "z-" + os.path.basename(root) + "/" + file
+                        map_index[list_name] = os.path.join(root, file)
+                    else:
+                        map_index[os.path.join(os.path.basename(root), file)] = os.path.join(root, file)
         self.custom_map_dictionary = map_index
 
     def enable_print_statements(self, val: bool):
