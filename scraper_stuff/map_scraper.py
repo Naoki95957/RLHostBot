@@ -16,8 +16,14 @@ import json
 # if a map is removed/timedout from steam, it'll mark the map as a txt file 
 # preventing other processes from using it
 
-# It assumes well find a combo of leth maps in their folders
-# and steam workshop maps in their folders
+# !!!!IMPORTANT!!!!
+# It assumes it will find a combo of leth maps in their folders as if you downloaded and extracted them
+# and steam workshop maps in their folders as if you downloaded and extracted them
+# IE:
+# 2298425323
+# |
+# ┕
+# 
 
 WORKSHOP_URL = "https://steamcommunity.com/sharedfiles/filedetails/?id="
 CHROME_DRIVER = './win_chromedriver89.exe'
@@ -88,39 +94,40 @@ def main():
     for root, dirs, files in os.walk(rl_dir):
         for file in files:
             if file.endswith('.udk'):
-                map_index[file] = {}
-                # steam maps
-                if os.path.basename(root).isnumeric():
-                    try:
-                        if scraper:
-                            scraper.set_url(WORKSHOP_URL + os.path.basename(root))
-                        else:
-                            scraper = WebThingy(WORKSHOP_URL + os.path.basename(root))
-                        results = scraper.start()
-                    except Exception as e:
-                        # be aware that you'll have to deal with these scenarios
-                        # (you can choose to find the info urself, delete the map, etc)
-                        # before you can run this again
-                        print("DROPPED STEAM MAP -> " + os.path.basename(root))
-                        os.rename(os.path.join(root, file), os.path.join(root, file + "(ERROR).txt"))
+                if file not in map_index:
+                    map_index[file] = {}
+                    # steam maps
+                    if os.path.basename(root).isnumeric():
+                        try:
+                            if scraper:
+                                scraper.set_url(WORKSHOP_URL + os.path.basename(root))
+                            else:
+                                scraper = WebThingy(WORKSHOP_URL + os.path.basename(root))
+                            results = scraper.start()
+                        except Exception as e:
+                            # be aware that you'll have to deal with these scenarios
+                            # (you can choose to find the info urself, delete the map, etc)
+                            # before you can run this again
+                            print("DROPPED STEAM MAP -> " + os.path.basename(root))
+                            os.rename(os.path.join(root, file), os.path.join(root, file + "(ERROR).txt"))
+                            counter += 1
+                            continue
+                        map_index[file]['title'] = results[0]
+                        map_index[file]['author'] = results[1]
+                        map_index[file]['description'] = results[2]
                         counter += 1
-                        continue
-                    map_index[file]['title'] = results[0]
-                    map_index[file]['author'] = results[1]
-                    map_index[file]['description'] = results[2]
-                    counter += 1
-                    print(counter, "maps compete")
-                else: 
-                    # it's one of leth's maps
-                    title = os.path.basename(root)
-                    info = json.load(open(os.path.join(root, "info.json")))
-                    author = info["author"]
-                    description = info["desc"]
-                    map_index[file]['title'] = title
-                    map_index[file]['author'] = author
-                    map_index[file]['description'] = description
-                    counter += 1
-                    print(counter, "maps compete")
+                        print(counter, "maps compete")
+                    else: 
+                        # it's one of leth's maps
+                        title = os.path.basename(root)
+                        info = json.load(open(os.path.join(root, "info.json")))
+                        author = info["author"]
+                        description = info["desc"]
+                        map_index[file]['title'] = title
+                        map_index[file]['author'] = author
+                        map_index[file]['description'] = description
+                        counter += 1
+                        print(counter, "maps compete")
     json_str = json.dumps(map_index)
     file = open("./map_info.json", 'w')
     file.write(json_str)
