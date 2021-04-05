@@ -1,6 +1,13 @@
-Python bot that in tandom with rocket league and some mods will allow an on demand hosting service for you're copy of the game on a machine. 
+# RLHostBot
+
+### A python based discord bot that in tandom with rocket league and some mods will allow an on demand hosting service for you're copy of the game on a machine. 
 
 The idea is that you have another computer or server with a copy of rocket league, bakkes and some plugins installed, and then this bot running with your discord token and information.
+
+
+## Installation
+
+### Files
 
 You'll need to configure an env file and an example is provided:
 ```
@@ -20,6 +27,13 @@ a password, and that will save it. Ideally this will be removed and can be
 auto-generated per match or defined by discord commands but for now this is
 the best we go
 
+You will need to install the 2 provided plugins for now as well. To do this
+put it in your `...bakkesmod/plugins` folder. Eventually Rocket Plugin will support
+hosting from command but until this all that we have is a quick mod I wrote up.
+The other plugin I might plublish sooner or later but it is also needed to get status
+updates on the game. 
+
+### Python
 To install all the necessary packages run:
 `pip install -r requirements.txt`
 
@@ -28,8 +42,23 @@ If you wish to run the map_info.json scraper install all the necessary packages 
 
 Note: if you are using a virtual python env like conda such as I am using
 you may need to install some of these packages via anaconda:
-`conda install -c anaconda pywin32`
-`conda install -c conda-forge selenium`
-`conda install -c anaconda beautifulsoup4`
+- `conda install -c anaconda pywin32`
+- `conda install -c conda-forge selenium`
+- `conda install -c anaconda beautifulsoup4`
+- etc...
 
-python 3.9 doesn't appear to be compatible
+python 3.9 doesn't appear to be compatible so get 3.7 or 3.8
+
+### Running the bot
+Assuming everything is configured and ready to go:
+- [x] Rocket League
+- [x] Bakkesmod
+- [x] config.env
+- [x] Python + packages 
+- [x] RLHBotCompanion.dll
+- [x] moddedRP.dll
+- [x] It's advisable to intsall netcode
+
+You should be able to run `python main.py` or `python bot.py` for now.
+I plan on having a terminal like back door but until then, you can run in debug mode
+to change the values on the fly if needed. 
