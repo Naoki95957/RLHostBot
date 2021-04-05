@@ -451,7 +451,7 @@ class HostingBot(discord.Client):
                         message = await message.channel.send("Working on it ...")
                         await self.start_game()
                         # we have no refrence as to when the game loads
-                        time.sleep(20)
+                        time.sleep(GAME_LOAD_TIME)
                         # minimize window to help lower-end gpus
                         win32gui.ShowWindow(win32gui.GetForegroundWindow(), win32con.SW_MINIMIZE)
                         await self.attempt_to_sendRL("plugin unload RocketPlugin")
