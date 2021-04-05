@@ -760,10 +760,10 @@ class HostingBot(discord.Client):
             extras = False
             keys = list(self.custom_map_dictionary.keys())
             keys.sort()
+            name = "Maps"
             for map_key in keys:
                 # there is a 1024 char limit on value for embed fields
                 if len(value_str + map_key + "\n") > 1023:
-                    name = "Maps"
                     if extras:
                         name = "cont."
                     embed_var.add_field(name=name, value=copy.deepcopy(value_str))
