@@ -33,7 +33,8 @@ The idea is that you have another computer or server with a copy of rocket leagu
   `rcon_password "new password"`
 
   #### rcon_commands.cfg
-  I've attached what commands I recommend whitelisting however you can do what you want. 
+  I've attached what commands I recommend whitelisting however you can do what you want.
+  The provided file is under `sample_files`
   You will at the least need to add:
   ```
   hcp
@@ -43,11 +44,11 @@ The idea is that you have another computer or server with a copy of rocket leagu
 
   #### Plugins
   You will need to install the 2 provided plugins for now as well. 
-  You will need to manually install `RLHBotCompanion.dll` and `moddedRP.dll`
-  To do this put it in your `...bakkesmod/plugins` folder. Eventually Rocket Plugin
-  will support hosting from command but until this all that we have is a quick mod
-  I wrote up. The other plugin I might plublish sooner or later but it is also
-  needed to get status updates on the game.
+  You will need to manually install `RLHBotCompanion.dll` and `moddedRP.dll` located
+  in the `plugins` folder I provided. To do this put it in your `...bakkesmod/plugins`
+  folder. Eventually Rocket Plugin will support hosting from command but until this
+  all that we have is a quick mod I wrote up. The other plugin I might plublish
+  sooner or later but it is also needed to get status updates on the game.
 
 ### Python
 To install all the necessary packages run:
@@ -79,3 +80,8 @@ Assuming everything is configured and ready to go:
 You should be able to run `python main.py` or `python bot.py` for now.
 I plan on having a terminal like back door but until then, you can run in debug mode
 to change the values on the fly if needed. 
+
+There is a provided scraper for map information gathering as it'll will occasionally be needed to add maps and what not
+but is not necessary if you plan on adding a limited number of maps. These files, including a chrome driver for version 89
+is included in `scraper_stuff`
+
