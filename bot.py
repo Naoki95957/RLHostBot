@@ -62,95 +62,105 @@ MUTATOR_MESSAGES = 2
 # This is also kind of arbitrary since it depends on fast you load the game
 GAME_LOAD_TIME = 20
 
-# TODO Move the 'mutator_value_dictionary' into a parallel list under the values
-# say value_names : [...]?
-# "Mutator" : : {"emote" : ":emoji:", "values" : ["value0", "value1", ...], "value_names" : ["<meaning>", ...]}
+# TODO Move the into a JSON maybe?
+# "Mutator" : : {"emote" : ":emoji:", "values" : ["value0", "value1", ...], "val_names" : ["<meaning>", ...]}
 MUTATORS = {
     # TAGame is custom written and modded in
     "TAGame" : {
         "alt_name" : "Game Mode",
         "emote" : "🎮",
         "values" : [ "TA0", "TA1", "TA2", "TA3", "TA5", "TA6"],
+        "val_names" : ["Soccar", "Hoops", "Snow Day", "Rumble", "Dropshot", "Heatseeker"],
     },
     "FreePlay" : {
         "alt_name" : "Free Play",
         "emote" : "🆓",
         "values" : ["Default", "FreePlay"],
-        "Default": "Disable Free Play"
+        "val_names" : ["Disable Free Play", "Enable Freeplay"],
     },
     "GameTimes" : {
         "alt_name" : "Match Length",
         "emote" : "🕐",
         "values" : ["Default", "10Minutes", "20Minutes", "UnlimitedTime"],
-        "Default" : "5 Minutes"
+        "val_names" : ["5 Minutes", "10 minutes", "20 minutes", "Unlimited"],
     },
     "GameScores" : {
         "alt_name" : "Max Score",
         "emote" : "🗜️",
-        "values" : ["Default", "Max1", "Max3", "Max5", "Max7", "UnlimitedScore"]
+        "values" : ["Default", "Max1", "Max3", "Max5", "Max7", "UnlimitedScore"],
+        "val_names" : ["Default", "1 Goal", "3 Goals", "5 Goals", "7 Goals"],
     },
     "OvertimeRules" : {
         "alt_name" : "Overtime",
         "emote" : "⏲️",
         "values" : ["Default", "Overtime5MinutesFirstScore", "Overtime5MinutesRandom"],
-        "Default": "Unlimited"
+        "val_names" : ["Unlimited", "+5 Max, First Score", "+5 Max, Random Team"],
     },
     "MaxTimeRules" : {
         "alt_name" : "Max Time Limit",
         "emote" : "⏰",
-        "values" : ["Default", "MaxTime11Minutes"]
+        "values" : ["Default", "MaxTime11Minutes"],
+        "val_names" : ["Default", "11 Minutes"],
     },
     "MatchGames" : {
         "alt_name" : "Serires Length",
         "emote" : "🏁",
         "values" : ["Default", "3Games", "5Games", "7Games"],
-        "Default": "Unlimited"
+        "val_names" : ["Unlimited", "3 Games", "5 Games", "7 Games"],
     },
     "GameSpeed" : {
         "alt_name" : "Game Speed",
         "emote" : "🎚️",
-        "values" : ["Default", "SloMoGameSpeed", "SloMoDistanceBall"]
+        "values" : ["Default", "SloMoGameSpeed", "SloMoDistanceBall"],
+        "val_names" : ["Default", "Slo-mo", "Time Warp"],
     },
     "BallMaxSpeed" : {
         "alt_name" : "Ball Max Speed",
         "emote" : "🏎️",
-        "values" : ["Default", "SlowBall", "FastBall", "SuperFastBall"]
+        "values" : ["Default", "SlowBall", "FastBall", "SuperFastBall"],
+        "val_names" : ["Default", "Slow", "Fast", "Super Fast"],
     },
     "BallType" : {
         "alt_name" : "Ball Type",
         "emote" : "🏀",
-        "values" : ["Default", "Ball_CubeBall", "Ball_Puck", "Ball_BasketBall", "Ball_Haunted", "Ball_BeachBall"]
+        "values" : ["Default", "Ball_CubeBall", "Ball_Puck", "Ball_BasketBall", "Ball_Haunted", "Ball_BeachBall"],
+        "val_names" : ["Default", "Cube", "Puck", "Basketball", "Haunted Ball", "Beach Ball"],
     },
     "BallGravity" : {
         "alt_name" : "Ball Gravity",
         "emote" : "🪂",
-        "values" : ["Default", "LowGravityBall", "HighGravityBall", "SuperGravityBall"]
+        "values" : ["Default", "LowGravityBall", "HighGravityBall", "SuperGravityBall"],
+        "val_names" : ["Default", "Low", "High", "Super High"],
     },
     "BallWeight" : {
         "alt_name" : "Ball Physics",
         "emote" : "🪃",
-        "values" : ["Default", "LightBall", "HeavyBall", "SuperLightBall", "MagnusBall", "MagnusBeachBall"]
+        "values" : ["Default", "LightBall", "HeavyBall", "SuperLightBall", "MagnusBall", "MagnusBeachBall"],
+        "val_names" : ["Default", "Light", "Heavy", "Super Light", "Curve", "Beach Ball Curve"],
     },
     "BallScale" : {
         "alt_name" : "Ball Size",
         "emote" : "💗",
-        "values" : ["Default", "SmallBall", "MediumBall", "BigBall", "GiantBall"]
+        "values" : ["Default", "SmallBall", "MediumBall", "BigBall", "GiantBall"],
+        "val_names" : ["Default", "Small", "Medium", "Large", "Gigantic"],
     },
     "BallBounciness" : {
         "alt_name" : "Ball Bounciness",
         "emote" : "🏓",
-        "values" : ["Default", "LowBounciness", "HighBounciness", "SuperBounciness"]
+        "values" : ["Default", "LowBounciness", "HighBounciness", "SuperBounciness"],
+        "val_names" : ["Default", "Low", "High", "Super High"],
     },
     "MultiBall" : {
         "alt_name" : "Number of Balls",
         "emote" : "🤡",
         "values" : ["Default", "TwoBalls", "FourBalls", "SixBalls"],
-        "Default": "One"
+        "val_names" : ["One", "Two", "Four", "Six"],
     },
     "Boosters" : {
         "alt_name" : "Boost Amount",
         "emote" : "🔥",
-        "values" : ["Default", "NoBooster", "UnlimitedBooster", "SlowRecharge", "RapidRecharge"]
+        "values" : ["Default", "NoBooster", "UnlimitedBooster", "SlowRecharge", "RapidRecharge"],
+        "val_names" : ["Default", "No Boost", "Unlimited", "Recharge (slow)", "Recharge (fast)"],
     },
     "Items" : {
         "alt_name" : "Rumble",
@@ -160,154 +170,53 @@ MUTATORS = {
             "ItemsModeBallManipulators", "ItemsModeCarManipulators", "ItemsModeSprings",
             "ItemsModeSpikes", "ItemsModeRugby", "ItemsModeHauntedBallBeam"
         ],
-        "Default": "None"
+        "val_names" : [
+            "None", "Default", "Slow", "Civilized", "Destruction Derby",
+            "Spring Loaded", "Spikes Only", "Rugby", "Haunted Ball Beam"
+        ],
     },
     "BoosterStrengths" : {
         "alt_name" : "Boost Strength",
         "emote" : "💪",
         "values" : ["Default", "BoostMultiplier1_5x", "BoostMultiplier2x", "BoostMultiplier10x"],
-        "Default": "1x"
+        "val_names" : ["1x", "1.5x", "2x", "10x"],
     },
     "Gravity" : {
         "alt_name" : "Gravity",
         "emote" : "🍂",
-        "values" : ["Default", "LowGravity", "HighGravity", "SuperGravity", "ReverseGravity"]
+        "values" : ["Default", "LowGravity", "HighGravity", "SuperGravity", "ReverseGravity"],
+        "val_names" : ["Default", "Low", "High", "Super High"],
     },
     "Demolish" : {
         "alt_name" : "Demolish",
         "emote" : "🪖",
-        "values" : ["Default", "NoDemolish", "DemolishAll", "AlwaysDemolishOpposing", "AlwaysDemolish"]
+        "values" : ["Default", "NoDemolish", "DemolishAll", "AlwaysDemolishOpposing", "AlwaysDemolish"],
+        "val_names" : ["Default", "Disabled", "Friendly Fire", "On Contact", "On Contact (FF)",],
     },
     "RespawnTime" : {
         "alt_name" : "Respawn Time",
         "emote" : "🐈",
         "values" : ["Default", "TwoSecondsRespawn", "OnceSecondRespawn", "DisableGoalDelay"],
-        "Default": "3 Seconds"
+        "val_names" : ["3 Seconds", "2 Seconds", "1 Second", "Disable Goal Reset"],
     },
     "BotLoadouts" : {
         "alt_name" : "Bot Loadouts",
         "emote" : "🎒",
-        "values" : ["Default", "RandomizedBotLoadouts"]
+        "values" : ["Default", "RandomizedBotLoadouts"],
+        "val_names" : ["Default", "Random"],
     },
     "AudioRules" : {
         "alt_name" : "Audio",
         "emote" : "🔊",
-        "values" : ["Default", "HauntedAudio"]
+        "values" : ["Default", "HauntedAudio"],
+        "val_names" : ["Default", "Haunted"],
     },
     "GameEventRules" : {
         "alt_name" : "Game Event",
         "emote" : "🎲",
-        "values" : ["Default", "HauntedGameEventRules", "RugbyGameEventRules"]
+        "values" : ["Default", "HauntedGameEventRules", "RugbyGameEventRules"],
+        "val_names" : ["Default", "Haunted", "Rugby"],
     }
-}
-
-# This translate the raw 'value' (except defaults) for the mutators to something more understandable
-# Default is left out since the actual value is "", literally \"\"
-MUTATOR_VALUE_DICTIONARY = {
-    # game modes
-    "TA0" : "Soccar", 
-    "TA1" : "Hoops",
-    "TA2" : "Snow Day",
-    "TA3" : "Rumble",
-    # what could possibly be category 4?? idk
-    "TA5" : "Dropshot",
-    "TA6" : "Heatseeker",
-    # free play
-    "FreePlay" : "Enable Freeplay",
-    # match length
-    "10Minutes" : "10 minutes",
-    "20Minutes" : "20 minutes",
-    "UnlimitedTime" : "Unlimited",
-    # max score
-    "Max1" : "1 Goal",
-    "Max3" : "3 Goals",
-    "Max5" : "5 Goals",
-    "Max7" : "7 Goals",
-    # overtime
-    "UnlimitedScore" : "Unlimited",
-    "Overtime5MinutesFirstScore" : "+5 Max, First Score", 
-    "Overtime5MinutesRandom" : "+5 Max, Random Team",
-    # max time limit
-    "MaxTime11Minutes" : "11 Minutes",
-    # series length
-    "3Games" : "3 Games",
-    "5Games" : "5 Games",
-    "7Games" : "7 Games",
-    # game speed
-    "SloMoGameSpeed" : "Slo-mo",
-    "SloMoDistanceBall" : "Time Warp",
-    # ball max speed
-    "SlowBall" : "Slow",
-    "FastBall" : "Fast",
-    "SuperFastBall" : "Super Fast",
-    # ball type
-    "Ball_CubeBall" : "Cube",
-    "Ball_Puck" : "Puck",
-    "Ball_BasketBall" : "Basketball",
-    "Ball_Haunted" : "Haunted Ball",
-    "Ball_BeachBall" : "Beach Ball",
-    # ball gravity
-    "LowGravityBall" : "Low",
-    "HighGravityBall" : "High",
-    "SuperGravityBall" : "Super High",
-    # ball physics
-    "LightBall" : "Light",
-    "HeavyBall" : "Heavy",
-    "SuperLightBall" : "Super Light",
-    "MagnusBall" : "Curve",
-    "MagnusBeachBall" : "Beach Ball Curve",
-    # ball size
-    "SmallBall" : "Small",
-    "MediumBall" : "Medium",
-    "BigBall" : "Large",
-    "GiantBall" : "Gigantic",
-    # ball bounciness
-    "LowBounciness" : "Low",
-    "HighBounciness" : "High",
-    "SuperBounciness" : "Super High",
-    # number of balls
-    "TwoBalls" : "Two",
-    "FourBalls" : "Four",
-    "SixBalls" : "Six",
-    # boost amount
-    "NoBooster" : "No Boost",
-    "UnlimitedBooster" : "Unlimited",
-    "SlowRecharge" : "Recharge (slow)",
-    "RapidRecharge" : "Recharge (fast)",
-    # rumble
-    "ItemsMode" : "Default",
-    "ItemsModeSlow" : "Slow",
-    "ItemsModeBallManipulators" : "Civilized",
-    "ItemsModeCarManipulators" : "Destruction Derby",
-    "ItemsModeSprings" : "Spring Loaded",
-    "ItemsModeSpikes" : "Spikes Only",
-    "ItemsModeRugby" : "Rugby",
-    "ItemsModeHauntedBallBeam" : "Haunted Ball Beam",
-    # boost strength
-    "BoostMultiplier1_5x" : "1.5x",
-    "BoostMultiplier2x" : "2x",
-    "BoostMultiplier10x" : "10x",
-    # gravity
-    "LowGravity" : "Low",
-    "HighGravity" : "High",
-    "SuperGravity" : "Super High",
-    "ReverseGravity" : "Reverse",
-    # demolish
-    "NoDemolish" : "Disabled",
-    "DemolishAll" : "Friendly Fire",
-    "AlwaysDemolishOpposing" : "On Contact",
-    "AlwaysDemolish" : "On Contact (FF)",
-    # respawn time
-    "TwoSecondsRespawn" : "2 Seconds",
-    "OnceSecondRespawn" : "1 Second",
-    "DisableGoalDelay" : "Disable Goal Reset",
-    # bot loadouts
-    "RandomizedBotLoadouts" : "Random",
-    # Audio
-    "HauntedAudio" : "Haunted",
-    # Game event
-    "HauntedGameEventRules" : "Haunted",
-    "RugbyGameEventRules" : "Rugby"
 }
 
 # no mutators take more than 9 so 12 should be enough for now
@@ -408,46 +317,6 @@ class HostingBot(discord.Client):
         self.update_companion_message.start()
         self.run(self.token)
 
-    def join_bot_thread(self):
-        if self.__bot_thread and isinstance(self.__bot_thread, Thread):
-            self.__bot_thread.join()
-
-    def index_custom_maps(self):
-        """
-        This just indexes custom maps and puts them into a dictionary for future use
-        """
-        map_index = {}
-        # doesn't seem to like this
-        # subprocess.Popen([sys.executable, "./map_scraper.py"])
-        for root, dirs, files in os.walk(self.custom_path):
-            for file in files:
-                if file.endswith('.udk'):
-                    list_name = self.master_map_list[file]['title']
-                    iteration = 0
-                    while (list_name in map_index.keys()):
-                        iteration += 1
-                        list_name = self.master_map_list[file]['title'] + " (" + str(iteration) + ")"
-                    map_index[list_name] = os.path.join(root, file)
-        self.custom_map_dictionary = map_index
-
-    def enable_print_statements(self, val: bool):
-        """
-        Enables or disables all print statements to terminal for the bot
-
-        Args:
-            val (bool): True/False
-        """
-        self.print_statements = val
-
-    def print_statements_enabled(self) -> bool:
-        """
-        Fetches whether print statements were enabled or not
-
-        Returns:
-            bool: True/False
-        """
-        return self.print_statements
-
     async def on_ready(self):
         self.try_loading()
         for guild in self.guilds:
@@ -471,7 +340,13 @@ class HostingBot(discord.Client):
             # await message.channel.send("I didn't understand that")
             pass
         self.try_saving()
-
+        
+    
+    ######################################################### 
+    #                                                       #
+    #                       COMMANDS                        #
+    #                                                       #
+    #########################################################
     async def handle_command(self, argv: list, message: discord.Message):
         if message.channel.id in self.listening_channels or message.author.id == int(self.my_id):
             if argv[0] == self.base_command:
@@ -576,24 +451,27 @@ class HostingBot(discord.Client):
                     else:
                         message = await message.channel.send("Working on it ...")
                         await self.start_game()
+                        # we have no refrence as to when the game loads
                         time.sleep(20)
+                        # minimize window to help lower-end gpus
+                        win32gui.ShowWindow(win32gui.GetForegroundWindow(), win32con.SW_MINIMIZE)
                         # TODO may not need to do this if I publish my plugin
                         # will need to rename the plugin for sure lol
-                        Minimize = win32gui.GetForegroundWindow()
-                        win32gui.ShowWindow(Minimize, win32con.SW_MINIMIZE)
                         await self.attempt_to_sendRL("plugin load plugin2")
                         time.sleep(1)
+                        # starts up rocket plugin GUI
                         await self.attempt_to_sendRL("hcp start_rp")
                         time.sleep(1)
+                        # binds rocket plugin path with our maps
                         await self.attempt_to_sendRL("rp_custom_path " + self.custom_path.replace("\\", "/"))
                         time.sleep(1)
                         self.reconnect = True
                         await message.edit(content="Done")
                 # mutator passing
                 elif argv[1] == 'mutator':
-                    if not self.companion_plugin_connected:
-                        await message.channel.send("RL is not running")
-                    elif self.is_admin_locked() and not self.has_permission(message):
+                    # if not self.companion_plugin_connected:
+                    #     await message.channel.send("RL is not running")
+                    if self.is_admin_locked() and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         try:
@@ -764,7 +642,7 @@ class HostingBot(discord.Client):
                 argv[3] = argv[3].replace("\"", "")
                 successful_message = None
                 # default or default name
-                if argv[3].lower() == "default" or ('Default' in MUTATORS[argv[2]] and argv[3].lower() == MUTATORS[argv[2]]['Default'].lower()):
+                if argv[3].lower() == "default" or (argv[3].lower() == MUTATORS[argv[2]]['val_names'][0].lower()):
                     await self.attempt_to_sendRL("rp mutator " + argv[2] + " \\\"\\\"")
                     await self.clear_active_messages()
                     successful_message = await channel.send(SUCCESS_MESSAGE)
@@ -785,8 +663,8 @@ class HostingBot(discord.Client):
                     found = argv[3].lower() in (val.lower() for val in MUTATORS[argv[2]]['values'])
                     # if not we can check the translations made
                     if not found:
-                        for key in MUTATOR_VALUE_DICTIONARY.keys():
-                            if argv[3].lower() == MUTATOR_VALUE_DICTIONARY[key].lower():
+                        for key in MUTATORS[argv[2]]['val_names']:
+                            if argv[3].lower() == key.lower():
                                 argv[3] = key
                                 found = True
                                 break
@@ -811,21 +689,17 @@ class HostingBot(discord.Client):
             else:
                 # print the values
                 options = ""
-                emoji = 0
+                val_index = 0
                 for value in MUTATORS[argv[2]]['values']:
-                    if value == "Default":
-                        if "Default" in MUTATORS[argv[2]]:
-                            value = MUTATORS[argv[2]]['Default']
-                    else:
-                        value = MUTATOR_VALUE_DICTIONARY[value]
-                    options += EMOTE_OPTIONS[emoji] + " " + value + "\n"
-                    emoji += 1
+                    value = MUTATORS[argv[2]]['val_names'][val_index]
+                    options += EMOTE_OPTIONS[val_index] + " " + value + "\n"
+                    val_index += 1
                 while(self.in_reactions):
                     # I can't control the scheduler and I'm too lazy to put a mutex on something like discord bots
                     time.sleep(0.5)
                 message = await channel.send("Options for mutator " + MUTATORS[argv[2]]['alt_name'] + " are:\n" + options)
                 self.in_reactions = True
-                for i in range(0, emoji):
+                for i in range(0, val_index):
                     if self.active_mutator_messages:
                         await self.clear_active_messages()
                     if self.stop_adding_reactions or not self.in_reactions:
@@ -879,92 +753,14 @@ class HostingBot(discord.Client):
                     await message.add_reaction(emote)
                 self.in_reactions = False
                 prompt = "More mutators:\n"
-
-    async def on_reaction_add(self, reaction: discord.reaction.Reaction, user: discord.user.User):
-        # if bot is tracking messages
-        # This is used and needed to kill
-        # mutator messages if they are running
-        if int(self.bot_id) != user.id:
-            if self.is_admin_locked():
-                # yes this is redundant but it's expensive and I only want to do this when I HAVE to
-                allowed_members = []
-                for member in self.members_list:
-                    if member.top_role.id in self.permitted_roles:
-                        allowed_members.append(member.id)
-                if user.id in allowed_members:
-                    self.current_reaction = reaction
-                    # this is for the redo operation in mutator
-                    if (
-                        (self.last_mutator_message) and
-                        reaction.message.id == self.last_mutator_message.id
-                    ):
-                        await self.handle_mutators(["", "mutator"], reaction.message.channel)
-                    elif (self.active_mutator_messages or self.vote_listing) and int(self.bot_id) != user.id:
-                        # check if reaction is on one of the bots messages
-                        await self.handle_reaction(reaction)
-                else:
-                    await reaction.message.channel.send("Sorry <@{0}>, commands are locked right now".format(user.id))
-            else:
-                self.current_reaction = reaction
-                # this is for the redo operation in mutator
-                if (
-                    (self.last_mutator_message) and
-                    reaction.message.id == self.last_mutator_message.id
-                ):
-                    await self.handle_mutators(["", "mutator"], reaction.message.channel)
-                elif (self.active_mutator_messages or self.vote_listing) and int(self.bot_id) != user.id:
-                    # check if reaction is on one of the bots messages
-                    await self.handle_reaction(reaction)
-            
-    def is_admin_locked(self) -> bool:
-        with self.admin_t_lock:
-            return self.admin_locked
-
-    async def handle_reaction(self, reaction: discord.reaction.Reaction, bypass=False, mutator=None):
-        # check if this is about the host voting
-        if self.vote_listing and reaction.message.id == self.vote_listing[0].id:
-            if reaction.count > self.vote_listing[1]:
-                await self.attempt_to_host(reaction.message.channel, bypass=True)
-        # otherise it probably about the mutators
-        else:
-            is_my_message = False
-            for active_message, mutator_category in self.active_mutator_messages:
-                if reaction.message.id == active_message.id:
-                    is_my_message = True
-                    mutator = mutator_category
-                    break
-            # this is fine since the reaction is actually
-            # saved in on_reaction_add for earlier anaylsis
-            if is_my_message or bypass:
-                arg = str(reaction)
-                arg2 = None
-                for key in MUTATORS.keys():
-                    if arg == MUTATORS[key]['emote']:
-                        arg = key
-                        break
-                    elif arg in EMOTE_OPTIONS:
-                        arg2 = MUTATORS[mutator]['values'][EMOTE_OPTIONS.index(arg)]
-                        arg = mutator
-                        break
-                await self.clear_active_messages()
-                # rebuild the command equivalent based on reactions
-                argv = [" ", "mutator"]
-                if arg:
-                    argv.append(arg)
-                if arg2:
-                    argv.append(arg2)
-                await self.handle_mutators(argv, reaction.message.channel)
-
-    async def clear_active_messages(self):
-        # I don't know why I need both flags, 
-        # it seems redundant but it didnt' work without it
-        self.stop_adding_reactions = True
-        while self.active_mutator_messages:
-            self.in_reactions = False
-            message, mutator = self.active_mutator_messages.pop()
-            await message.delete()
-
+   
     async def list_maps(self, message: discord.Message):
+        """
+        Lists all maps found int the directory after having indexed the maps
+
+        Args:
+            message (discord.Message): used for sendback
+        """
         description = "Here is a list of all the maps I can host:"
         try:
             embed_var = discord.Embed(
@@ -1006,17 +802,44 @@ class HostingBot(discord.Client):
         except Exception as e:
             await message.channel.send("Sorry, I couldn't undersand that")
 
+    async def bind_message(self, message: discord.Message):
+        """
+        This is used to affix the 'scoreboard' message to some channel
+
+        Args:
+            message (discord.Message): used for sendback
+        """
+        self.binded_message = await message.channel.send("Binding...")
+        self.binded_message_ID = self.binded_message.id
+        self.binded_message_channel = self.binded_message.channel.id
+        self.try_saving()
+
     async def pass_to_console(self, argv: list, message: discord.message):
-            command = ""
-            for i in range(2, len(argv)):
-                command += (argv[i] + " ")
-            try:
-                await self.attempt_to_sendRL(command)
-            except Exception as e:
-                self.print("Command failed")
-                self.print(e)
+        """
+        This allows you to send a command directly to bakkesconsole
+
+        If you want to send an str see `attempt_to_sendRL`
+
+        Args:
+            argv (list): your args from discord
+            message (discord.message): used for sendback
+        """
+        command = ""
+        for i in range(2, len(argv)):
+            command += (argv[i] + " ")
+        try:
+            await self.attempt_to_sendRL(command)
+        except Exception as e:
+            self.print("Command failed")
+            self.print(e)
 
     async def set_permit_command(self, message: discord.Message):
+        """
+        Adds a role to permitted roles
+
+        Args:
+            message (discord.Message): used to sendback
+        """
         try:
             role_id = int(str(message.content).replace(self.base_command + ' permit ', ''))
             self.permitted_roles.append(role_id)
@@ -1024,7 +847,49 @@ class HostingBot(discord.Client):
         except Exception as e:
             await message.channel.send("Sorry, I couldn't undersand that")
 
+    async def start_game(self):
+        """
+        Starts up rocket league exe
+        """
+        self.print("Starting RL")
+        subprocess.Popen(self.rl_path)
+
+    async def kill_game(self):
+        """
+        Finds rocket league and kills the process
+        """
+        self.print("Killing RL")
+        try:
+            for proc in psutil.process_iter():
+                try:
+                    # would need to check others if it wasn't a windows only game
+                    if "RocketLeague.exe" in proc.name():
+                        self.print(["PID found:", proc.pid])
+                        psutil.Process(proc.pid).kill()
+                        self.companion_plugin_connected = False
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    pass
+        except Exception as e:
+            self.print("Failed to kill proces")
+            self.print(e)
+
+    async def restart_game(self):
+        """
+        Simply restarts the game
+        """
+        self.kill_game()
+        time.sleep(1)
+        self.start_game()
+
     async def help_command(self, message: discord.Message, error_response=False):
+        """
+        Prints a giant list of commands
+        It does do a little bit of logic and shows what the user has permission for
+
+        Args:
+            message (discord.Message): user for sendback
+            error_response (bool, optional): adds error response if this is what that's for. Defaults to False.
+        """
         desc = ""
         has_permission = self.has_permission(message)
         if has_permission:
@@ -1139,7 +1004,173 @@ class HostingBot(discord.Client):
             msg = "Sorry, I didn't understand that :("
         await message.channel.send(content=msg, embed=embed_var)
 
+    ######################################################### 
+    #                                                       #
+    #                       REACTIONS                       #
+    #                                                       #
+    #########################################################
+    async def on_reaction_add(self, reaction: discord.reaction.Reaction, user: discord.user.User):
+        # if bot is tracking messages
+        # This is used and needed to kill
+        # mutator messages if they are running
+        if int(self.bot_id) != user.id:
+            if self.is_admin_locked():
+                # yes this is redundant but it's expensive and I only want to do this when I HAVE to
+                allowed_members = []
+                for member in self.members_list:
+                    if member.top_role.id in self.permitted_roles:
+                        allowed_members.append(member.id)
+                if user.id in allowed_members:
+                    self.current_reaction = reaction
+                    # this is for the redo operation in mutator
+                    if (
+                        (self.last_mutator_message) and
+                        reaction.message.id == self.last_mutator_message.id
+                    ):
+                        await self.handle_mutators(["", "mutator"], reaction.message.channel)
+                    elif (self.active_mutator_messages or self.vote_listing) and int(self.bot_id) != user.id:
+                        # check if reaction is on one of the bots messages
+                        await self.handle_reaction(reaction)
+                else:
+                    await reaction.message.channel.send("Sorry <@{0}>, commands are locked right now".format(user.id))
+            else:
+                self.current_reaction = reaction
+                # this is for the redo operation in mutator
+                if (
+                    (self.last_mutator_message) and
+                    reaction.message.id == self.last_mutator_message.id
+                ):
+                    await self.handle_mutators(["", "mutator"], reaction.message.channel)
+                elif (self.active_mutator_messages or self.vote_listing) and int(self.bot_id) != user.id:
+                    # check if reaction is on one of the bots messages
+                    await self.handle_reaction(reaction)
+
+    async def handle_reaction(self, reaction: discord.reaction.Reaction, bypass=False, mutator=None):
+        # check if this is about the host voting
+        if self.vote_listing and reaction.message.id == self.vote_listing[0].id:
+            if reaction.count > self.vote_listing[1]:
+                await self.attempt_to_host(reaction.message.channel, bypass=True)
+        # otherise it probably about the mutators
+        else:
+            is_my_message = False
+            for active_message, mutator_category in self.active_mutator_messages:
+                if reaction.message.id == active_message.id:
+                    is_my_message = True
+                    mutator = mutator_category
+                    break
+            # this is fine since the reaction is actually
+            # saved in on_reaction_add for earlier anaylsis
+            if is_my_message or bypass:
+                arg = str(reaction)
+                arg2 = None
+                for key in MUTATORS.keys():
+                    if arg == MUTATORS[key]['emote']:
+                        arg = key
+                        break
+                    elif arg in EMOTE_OPTIONS:
+                        arg2 = MUTATORS[mutator]['values'][EMOTE_OPTIONS.index(arg)]
+                        arg = mutator
+                        break
+                await self.clear_active_messages()
+                # rebuild the command equivalent based on reactions
+                argv = [" ", "mutator"]
+                if arg:
+                    argv.append(arg)
+                if arg2:
+                    argv.append(arg2)
+                await self.handle_mutators(argv, reaction.message.channel)
+
+    ######################################################### 
+    #                                                       #
+    #                       HELPERS                         #
+    #                                                       #
+    #########################################################
+
+    def join_bot_thread(self):
+        """
+        this is used for the terminal but I haven't worked on that yet
+
+        It's meant to join the threads
+        """
+        if self.__bot_thread and isinstance(self.__bot_thread, Thread):
+            self.__bot_thread.join()
+
+    def index_custom_maps(self):
+        """
+        This just indexes custom maps and puts them into a dictionary for future use
+
+        This doesn't do the whole scraper thing, so that'll still need map_info.json
+        built before it can be safely used.
+
+        if you want to bypass all this stuff you can use `mapd` command in discord
+
+        the format of the map_info.json is pretty simple and you can use this if you wanted to do a quick update:
+        ```
+        my_dict = json.load("./map_info.json")
+        my_dict['newMap.udk'] = {"title": "my new map", "author":"prob not Leth", "description":"use unlimited boost"}
+        payload = json.dump(my_dict)
+        open("./map_info.json").write(payload)
+        ```
+        
+        """
+        map_index = {}
+        # doesn't seem to like this
+        # subprocess.Popen([sys.executable, "./map_scraper.py"])
+        for root, dirs, files in os.walk(self.custom_path):
+            for file in files:
+                if file.endswith('.udk'):
+                    list_name = self.master_map_list[file]['title']
+                    iteration = 0
+                    while (list_name in map_index.keys()):
+                        iteration += 1
+                        list_name = self.master_map_list[file]['title'] + " (" + str(iteration) + ")"
+                    map_index[list_name] = os.path.join(root, file)
+        self.custom_map_dictionary = map_index
+
+    def enable_print_statements(self, val: bool):
+        """
+        Enables or disables all print statements to terminal for the bot
+
+        Args:
+            val (bool): True/False
+        """
+        self.print_statements = val
+
+    def print_statements_enabled(self) -> bool:
+        """
+        Fetches whether print statements were enabled or not
+
+        Returns:
+            bool: True/False
+        """
+        return self.print_statements
+
+    def is_admin_locked(self) -> bool:
+        '''
+         I'm using this mutex bc it didn't appear to work for me w/out it
+        '''
+        with self.admin_t_lock:
+            return self.admin_locked
+
+    async def clear_active_messages(self):
+        """
+            This is used to clean off all the mutator reactive messages since there can be a lot
+        """
+        # I don't know why I need both flags, 
+        # it seems redundant but it didnt' work without it
+        self.stop_adding_reactions = True
+        while self.active_mutator_messages:
+            self.in_reactions = False
+            message, mutator = self.active_mutator_messages.pop()
+            await message.delete()
+
     async def attempt_to_sendRL(self, message: str):
+        """
+        This sends a message to the bakkesconsole
+
+        Args:
+            message (str): your message
+        """
         try:
             async with websockets.connect(self.bakkesmod_server, timeout=0.3) as websocket:
                 await websocket.send('rcon_password ' + self.rcon_password)
@@ -1149,16 +1180,21 @@ class HostingBot(discord.Client):
                 await websocket.close()
         except Exception as e:
             self.print("Failed to connect to RL")
-            return None
-
-    async def bind_message(self, message: discord.Message):
-        self.binded_message = await message.channel.send("Binding...")
-        self.binded_message_ID = self.binded_message.id
-        self.binded_message_channel = self.binded_message.channel.id
-        self.try_saving()
+            return
 
     @tasks.loop(seconds=PLUGIN_FREQUENCY)
     async def update_companion_message(self):
+        """
+        This is what the scoreboard runs on:
+        It calls the plugin repeatedly expecting a json package:
+        It then scans that package for players and determines if it is idle
+        if the game is idle for some time, 
+        it'll issue a command to go to the main menu
+
+        if not, it assumes it's in the main menu
+
+        if no response is detected, it is assumed that RL is offline
+        """
         await self.wait_until_ready()
         # go to main menu to avoid bugs where in match for super long time
         if self.idle_counter > IDLE_COUNT:
@@ -1188,6 +1224,12 @@ class HostingBot(discord.Client):
             await self.binded_message.edit(content="", embed=self.get_score_embed())
 
     def get_score_embed(self) -> discord.Embed:
+        """
+        This is a helper function that formats the embed for the scoreboard
+
+        Returns:
+            discord.Embed: formated embed based on json package in `self.match_data`
+        """
         if self.match_data:
             title = "Current Game"
             self.players_connected = len(self.match_data['teams'][0]['players']) + len(self.match_data['teams'][1]['players'])
@@ -1206,9 +1248,8 @@ class HostingBot(discord.Client):
             embed_var = discord.Embed(
                 title=title
             )
-            # TODO possibly translate map with dict?
-            # map dict is large and takes time so
-            # it's a maybe that currently leans on no
+            # map name here appears to be based in the udk and has
+            # nothing to do with file name or file location...
             embed_var.add_field(name="Map:", value=self.match_data['map'])
             embed_var.add_field(name="Match Length:", value=str(match_time), inline=False)
             embed_var.add_field(name="Duration:", value=str(passed_time), inline=False)
@@ -1236,6 +1277,15 @@ class HostingBot(discord.Client):
             )
 
     def parse_team_info(self, team: dict) -> tuple:
+        """
+        Another helper function; this is for `get_score_embed`
+        This just sorts thru the teams and extracts the info
+        
+        Args:
+            team (dict): a single team
+        Returns:
+            tuple: ("{team} - {score}", [player0, player1, ...])
+        """
         title = team['name'] + ' - ' + str(team['score'])
         players = ""
         for i in range(0, len(team['players'])):
@@ -1252,40 +1302,6 @@ class HostingBot(discord.Client):
         if not players:
             players = "None"
         return title, players
-
-    async def start_game(self):
-        """
-        Starts up rocket league exe
-        """
-        self.print("Starting RL")
-        subprocess.Popen(self.rl_path)
-
-    async def kill_game(self):
-        """
-        Finds rocket league and kills the process
-        """
-        self.print("Killing RL")
-        try:
-            for proc in psutil.process_iter():
-                try:
-                    # would need to check others if it wasn't a windows only game
-                    if "RocketLeague.exe" in proc.name():
-                        self.print(["PID found:", proc.pid])
-                        psutil.Process(proc.pid).kill()
-                        self.companion_plugin_connected = False
-                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                    pass
-        except Exception as e:
-            self.print("Failed to kill proces")
-            self.print(e)
-
-    async def restart_game(self):
-        """
-        Simply restarts the game
-        """
-        self.kill_game()
-        time.sleep(1)
-        self.start_game()
 
     async def permission_failure(self, message: discord.Message):
         """
@@ -1333,7 +1349,7 @@ class HostingBot(discord.Client):
                             game_status = await websocket.recv()
                             if (game_status != "ERR"):
                                 self.match_data = copy.deepcopy(json.loads(str(game_status)))
-                                print(self.match_data)
+                                self.print(self.match_data)
                             else:
                                 self.match_data = {}
                             time.sleep(PLUGIN_FREQUENCY)
@@ -1416,6 +1432,10 @@ class HostingBot(discord.Client):
         return dictionary
 
     def __background_loop(self):
+        """
+        This is used to simple auto save the bot state every few seconds or
+        whatever you defined it as -> `self.background_timer`
+        """
         while True:
             time.sleep(self.background_timer)
             self.try_saving()
