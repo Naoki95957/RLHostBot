@@ -1,0 +1,5 @@
+websockets
+python-dotenv
+discord.py
+psutil
+pywin32

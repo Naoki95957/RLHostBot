@@ -20,7 +20,6 @@ from threading import Thread
 from dotenv import load_dotenv
 from pprint import pprint
 
-
 # TODO log scoreboard entries? 
 # 
 # TODO show all presets
