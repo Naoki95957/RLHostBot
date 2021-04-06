@@ -18,7 +18,7 @@ The idea is that you have another computer or server with a copy of rocket leagu
   DISCORD_TOKEN=secret token provided form discord
   BAKKES_SERVER=ws://127.0.0.1:9002 (ws[WebSocket]://IP:port, the provided is default)
   RCON_PASSWORD=password (rcon password, again this is default)
-  RL_PATH=(path to RL exe)
+  RL_PATH="C:/Program Files (x86)/Steam/steamapps/common/rocketleague"(path to RL; provided is an example)
   CUSTOM_PATH=(path to custom maps)
   GAME_PASSWORD=(this is predefined at the moment)
   ```

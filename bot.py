@@ -3,6 +3,7 @@ import os
 from os import path
 from discord.ext import tasks
 import win32gui, win32con
+import shutil
 import threading
 import subprocess
 import math
@@ -221,6 +222,59 @@ MUTATORS = {
     }
 }
 
+# These are default maps in the game and can be loaded with the custom mapd command
+DEFAULT_MAPS = {
+    "ARCtagon" : "ARC_P",
+    "Forbidden Temple" : "CHN_Stadium_P",
+    "Mannfield (Night)" : "EuroStadium_Night_P",
+    "Mannfield" : "EuroStadium_P",
+    "Mannfield (Stormy)" : "EuroStadium_Rainy_P",
+    "Farmstead (Night)" : "Farm_Night_P",
+    "Urban Central (Haunted)" : "Haunted_TrainStation_P",
+    "Dunk House" : "HoopsStadium_P",
+    "Pillars" : "Labs_CirclePillars_P",
+    "Cosmic (Old)" : "Labs_Cosmic_P",
+    "Cosmic (New)" : "Labs_Cosmic_V4_P",
+    "Double Goal (Old)" : "Labs_DoubleGoal_P",
+    "Double Goal (New)" : "Labs_DoubleGoal_V2_P",
+    "Octagon (New)" : "Labs_Octagon_02_P",
+    "Octagon (Old)" : "Labs_Octagon_P",
+    "Underpass" : "Labs_Underpass_P",
+    "Utopia Retro" : "Labs_Utopia_P",
+    "Tokyo Underpass" : "NeoTokyo_P",
+    "Neo Tokyo" : "NeoTokyo_Standard_P",
+    "Beckwith Park (Midnight)" : "Park_Night_P",
+    "Beckwith Park" : "Park_P",
+    "Beckwith Park (Stormy)" : "Park_Rainy_P",
+    "Core 707" : "ShatterShot_P",
+    "DFH Stadium (Stormy)" : "Stadium_Foggy_P",
+    "DFH Stadium" : "Stadium_P",
+    "DFH Stadium (Snowy)" : "Stadium_Winter_P",
+    "Urban Central (Dawn)" : "TrainStation_Dawn_P",
+    "Urban Central (Night)" : "TrainStation_Night_P",
+    "Urban Central" : "TrainStation_P",
+    "AquaDome" : "Underwater_P",
+    "Utopia Coliseum (Dusk)" : "UtopiaStadium_Dusk_P",
+    "Utopia Coliseum" : "UtopiaStadium_P",
+    "Utopia Coliseum (Snowy)" : "UtopiaStadium_Snow_P",
+    "Badlands (Night)" : "Wasteland_Night_P",
+    "Badlands" : "Wasteland_P",
+    "Starbase ARC" : "arc_standard_P",
+    "Salty Shores" : "beach_P",
+    "Salty Shores (Night)" : "beach_night_P",
+    "Champions Field (Day)" : "cs_day_P",
+    "Rivals Arena" : "cs_hw_P",
+    "Champions Field" : "cs_P",
+    "Mannfield (Snowy)" : "eurostadium_snownight_P",
+    "Farmstead" : "farm_P",
+    "Neon Fields" : "music_P",
+    "DFH Stadium (Day)" : "stadium_day_P",
+    "Throwback Stadium (Snowy)" : "throwbackhockey_P",
+    "Throwback Stadium" : "throwbackstadium_P",
+    "Wasteland (Night)" : "wasteland_Night_S_P",
+    "Wasteland" : "wasteland_s_P"
+}
+
 # no mutators take more than 9 so 12 should be enough for now
 # these will be the 'options' for the values on a given mutator
 EMOTE_OPTIONS = [
@@ -242,6 +296,10 @@ MAP_LIST = "./map_info.json"
 URL_REGEX = r"\<.*?\>"
 
 STR_COMMAND_PATTERN = "\'.*?\'|\".*?\"|\(.*?\)|[a-zA-Z\d\_\*\-\\\+\/\[\]\?\!\@\#\$\%\&\=\~\`]+"
+
+RL_EXECUTABLE = "./Binaries/Win64/RocketLeague.exe"
+
+RL_PC_CONSOLE = "./TAGame/CookedPCConsole"
 
 class HostingBot(discord.Client):
 
@@ -514,6 +572,15 @@ class HostingBot(discord.Client):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         await self.send_selected_map(argv[2], message.channel)
+                # selects the map and send it to rl
+                # also prints the selected map info
+                elif argv[1] == 'load-map':
+                    if not self.companion_plugin_connected:
+                        await message.channel.send("RL is not running")
+                    elif self.is_admin_locked() and not self.has_permission(message):
+                        await message.channel.send("Sorry, the commands are locked right now")
+                    else:
+                        await self.send_selected_map(argv[2], message.channel, True)
                 # attempts to start up the match with the given settings
                 elif argv[1] == 'host':
                     if not self.companion_plugin_connected:
@@ -553,14 +620,10 @@ class HostingBot(discord.Client):
                 # allows one to access bakkesconsole
                 elif argv[1] == 'console':
                         if self.has_permission(message):
-                            if not self.companion_plugin_connected:
-                                await message.channel.send("RL is not running")
-                            else:
-                                await self.pass_to_console(argv, message)
-                                await message.channel.send("Sent instructions to game")
+                            await self.pass_to_console(argv, message)
+                            await message.channel.send("Sent instructions, may or may not have been recieved")
                         else:
                             await self.permission_failure(message)
-                # TODO set up an option to find ip
                 # sets up the ip that the host will relay
                 elif argv[1] == 'setIP':
                     if self.has_permission(message):
@@ -578,18 +641,49 @@ class HostingBot(discord.Client):
                 else:
                     await self.help_command(argv, True)
 
-    async def send_selected_map(self, arg: str, channel: discord.TextChannel):
+    async def send_selected_map(self, arg: str, channel: discord.TextChannel, swap=False):
+        """
+        This selects a map to be loaded in game
+
+        Args:
+            arg (str): the map name/file-name
+            channel (discord.TextChannel): used for sendback
+            swap (bool, optional): It says to swap it on underpass or not. Defaults to False.
+        """
         try:
             message = await channel.send("Getting map info...")
             arg = arg.replace("\"", "")
+            # these 2 loops correct for casing
+            # if the name matches
+            if (arg.lower() in (name.lower() for name in DEFAULT_MAPS.keys())):
+                for name in DEFAULT_MAPS.keys():
+                    if arg.lower() == name.lower():
+                        arg = name
+            # if it matches the raw file name
+            if arg.lower() in (raw_name.lower() for raw_name in DEFAULT_MAPS.values()):
+                for val in DEFAULT_MAPS.values():
+                    if arg.lower() == val.lower():
+                        await self.attempt_to_sendRL("rp mapd " + val)
+                        await message.channel.send("Sent map " + arg + " to the game.")
+                        if swap:
+                            await message.channel.send(
+                                "I just loaded the map normally.\n" + 
+                                "Why would I load I standard map with the underpass map???")
+                        return
             # this should be the full path
+            # this checks the map listing we indexed on init
             if self.master_map_list and not arg.startswith("z-"):
                 file_path = self.custom_map_dictionary[arg]
                 file_name = os.path.basename(file_path)
                 title = self.master_map_list[file_name]['title']
                 author = self.master_map_list[file_name]['author']
                 description = self.master_map_list[file_name]['description']
-                await self.attempt_to_sendRL('rp map ' + file_name.replace(MAP_EXTENSION_TYPE, ""))
+                if swap:
+                    cooked = os.path.join(self.rl_path, RL_PC_CONSOLE)
+                    shutil.copy(file_path, os.path.join(cooked, "Labs_Underpass_P.upk"))
+                    await self.attempt_to_sendRL('rp mapd Labs_Underpass_P')
+                else: 
+                    await self.attempt_to_sendRL('rp map ' + file_name.replace(MAP_EXTENSION_TYPE, ""))
                 embed_counter = 0
                 matches = re.findall(self.url_pattern, description)
                 for i in range(0, len(matches)):
@@ -597,7 +691,10 @@ class HostingBot(discord.Client):
                         embed_counter += 1
                         url = matches[i]
                         description = description.replace(url, url[1:-1])
-                message_str = ("Map sent to game:\n" +
+                header = "Map sent to game:\n"
+                if swap: 
+                    header = "Map loaded in game as Underpass:\n"
+                message_str = ( header +
                     "**" + title + "**\n" +
                     "**By: " + author + "**\n" + 
                     "*file: " + file_name + "*\n\n" + description)
@@ -852,7 +949,7 @@ class HostingBot(discord.Client):
         Starts up rocket league exe
         """
         self.print("Starting RL")
-        subprocess.Popen(self.rl_path)
+        subprocess.Popen(os.path.join(self.rl_path, RL_EXECUTABLE))
 
     async def kill_game(self):
         """
@@ -919,6 +1016,9 @@ class HostingBot(discord.Client):
                 " lock*\n"+
                 "\tThis will make all commands require permissions:\n\tArgs: None\n\n"+
                 self.base_command +
+                " **load-map**\n"+
+                "\tPicks map to be hosted on underpass:\n\tArgs: [name of map (if there is a gap use quotes)]\n\n"+
+                self.base_command +
                 " **map**\n"+
                 "\tPicks map to be hosted:\n\tArgs: [name of map (if there is a gap use quotes)]\n\n"+
                 self.base_command +
@@ -976,10 +1076,13 @@ class HostingBot(discord.Client):
                 " host\n"+
                 "\tStart up a game! If players are in game it will instead vote:\n\tArgs: None\n\n"+
                 self.base_command +
+                " load-map\n"+
+                "\tPicks map to be hosted on underpass:\n\tArgs: [name of map (if there is a gap use quotes)]\n\n"+
+                self.base_command +
                 " map\n"+
                 "\tPicks map to be hosted:\n\tArgs: [name of map (if there is a gap use quotes)]\n\n"+
                 self.base_command +
-                " maps\n"+
+                " list-maps\n"+
                 "\tList all the availble maps:\n\tArgs: None\n\n"+
                 self.base_command +
                 " mutator\n"+
@@ -1214,10 +1317,18 @@ class HostingBot(discord.Client):
             self.idle_counter = 0
         # updated the host request if it's found and a match is online
         if self.match_request_message and self.match_data:
+            pass_str = ""
+            ip_addr = ""
+            if not self.ip_address:
+                ip_addr = "ask admin where to connect"
+            else:
+                ip_addr = self.ip_address
+            if self.game_password:
+                pass_str = "Pass: ||" + self.game_password + "||"
             await self.match_request_message.edit(
                 content = "Match is online!\n" +
-                    "IP: ||" + self.ip_address + "||\n" +
-                    "Pass: ||" + self.game_password + "||"
+                    "IP: ||" + ip_addr + "||\n" +
+                    pass_str
             )
             self.match_request_message = None
         # scoreboard stuff
