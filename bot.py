@@ -2,6 +2,7 @@ from datetime import timedelta
 import os
 from os import path
 from discord.ext import tasks
+from pathlib import Path
 import win32gui, win32con
 import shutil
 import threading
@@ -325,6 +326,7 @@ class HostingBot(discord.Client):
     url_pattern = None
     master_map_list = None
     members_list = None
+    bot_file_path = None
 
     # bot/match global stuff
     active_mutator_messages = []
@@ -368,6 +370,7 @@ class HostingBot(discord.Client):
         self.token = os.getenv('DISCORD_TOKEN')
         self.game_password = os.getenv('GAME_PASSWORD')
         self.print_statements = print_statements
+        self.bot_file_path =  str(Path(str(__file__)).parents[0])
         self.master_map_list = json.load(open(MAP_LIST))
 
     def initialize(self):
@@ -563,7 +566,7 @@ class HostingBot(discord.Client):
                         await self.handle_command([argv[0], 'start'], message)
                     else:
                         await self.permission_failure(message)
-                # selects the map and send it to rl
+                # selects the map and sends it to rl
                 # also prints the selected map info
                 elif argv[1] == 'map':
                     if not self.companion_plugin_connected:
@@ -572,7 +575,7 @@ class HostingBot(discord.Client):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         await self.send_selected_map(argv[2], message.channel)
-                # selects the map and send it to rl
+                # selects the map, loads it, and sends it to rl
                 # also prints the selected map info
                 elif argv[1] == 'load-map':
                     if not self.companion_plugin_connected:
@@ -581,6 +584,17 @@ class HostingBot(discord.Client):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         await self.send_selected_map(argv[2], message.channel, True)
+                # selects the map, loads it, and sends it to rl
+                # also prints the selected map info
+                elif argv[1] == 'restore-labs':
+                    if self.is_admin_locked() and not self.has_permission(message):
+                        await message.channel.send("Sorry, the commands are locked right now")
+                    else:
+                        shutil.copy(
+                                os.path.join(self.bot_file_path, "./sample_files/Labs_Underpass_P.upk"),
+                                os.path.join(self.rl_path, os.path.join(RL_PC_CONSOLE, "Labs_Underpass_P.upk"))
+                            )
+                        await message.channel.send("Underpass has been restored")
                 # attempts to start up the match with the given settings
                 elif argv[1] == 'host':
                     if not self.companion_plugin_connected:
@@ -655,16 +669,18 @@ class HostingBot(discord.Client):
             arg = arg.replace("\"", "")
             # these 2 loops correct for casing
             # if the name matches
+            map_name = ""
             if (arg.lower() in (name.lower() for name in DEFAULT_MAPS.keys())):
                 for name in DEFAULT_MAPS.keys():
                     if arg.lower() == name.lower():
-                        arg = name
+                        arg = DEFAULT_MAPS[name]
+                        map_name = name
             # if it matches the raw file name
             if arg.lower() in (raw_name.lower() for raw_name in DEFAULT_MAPS.values()):
                 for val in DEFAULT_MAPS.values():
                     if arg.lower() == val.lower():
                         await self.attempt_to_sendRL("rp mapd " + val)
-                        await message.channel.send("Sent map " + arg + " to the game.")
+                        await message.channel.send("Sent map " + map_name + " to the game.")
                         if swap:
                             await message.channel.send(
                                 "I just loaded the map normally.\n" + 
@@ -1236,6 +1252,7 @@ class HostingBot(discord.Client):
                     else:
                         map_index[os.path.join(os.path.basename(root), file)] = os.path.join(root, file)
         self.custom_map_dictionary = map_index
+        self.custom_map_dictionary.update(DEFAULT_MAPS)
 
     def enable_print_statements(self, val: bool):
         """

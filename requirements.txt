@@ -3,3 +3,4 @@ python-dotenv
 discord.py
 psutil
 pywin32
+pathlib
