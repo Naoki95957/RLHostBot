@@ -1065,6 +1065,9 @@ class HostingBot(discord.Client):
                 " restartRL*\n"+
                 "\tOnly restarts the rocket league application:\n\tArgs: None\n\n"+
                 self.base_command +
+                " **restore-labs**\n"+
+                "\tRestores the underpass map to original:\n\tArgs: None\n\n"+
+                self.base_command +
                 " setIP*\n"+
                 "\tSets the IP to be reported:\n\tArgs: [ip address (use double quotes)]\n\n"+
                 self.base_command +
@@ -1106,6 +1109,9 @@ class HostingBot(discord.Client):
                 self.base_command +
                 " preset\n"+
                 "\tLoad in a predefined preset:\n\tArgs: [name of preset (case sensitve)]\nWIP\n\n"+
+                self.base_command +
+                " restore-labs\n"+
+                "\tRestores the underpass map to original:\n\tArgs: None\n\n"+
                 self.base_command +
                 " start\n"+
                 "\tStarts application and loads plugins (usefull if a map caused a crash):\n\tArgs: None\n\n"+
