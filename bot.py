@@ -73,8 +73,8 @@ MUTATORS = {
     "TAGame" : {
         "alt_name" : "Game Mode",
         "emote" : "🎮",
-        "values" : [ "TA0", "TA1", "TA2", "TA3", "TA5", "TA6"],
-        "val_names" : ["Soccar", "Hoops", "Snow Day", "Rumble", "Dropshot", "Heatseeker"],
+        "values" : [ "TA0", "TA1", "TA2", "TA3", "TA5", "TA6", "TA7"],
+        "val_names" : ["Soccar", "Hoops", "Snow Day", "Rumble", "Dropshot", "Heatseeker", "Gridiron"],
     },
     "FreePlay" : {
         "alt_name" : "Free Play",
@@ -266,6 +266,7 @@ DEFAULT_MAPS = {
     "Champions Field (Day)" : "cs_day_P",
     "Rivals Arena" : "cs_hw_P",
     "Champions Field" : "cs_P",
+    "Champions Field (Gridiron + Night)" : "BB_P",
     "Mannfield (Snowy)" : "eurostadium_snownight_P",
     "Farmstead" : "farm_P",
     "Neon Fields" : "music_P",
