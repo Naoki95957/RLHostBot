@@ -266,7 +266,7 @@ DEFAULT_MAPS = {
     "Champions Field (Day)" : "cs_day_P",
     "Rivals Arena" : "cs_hw_P",
     "Champions Field" : "cs_P",
-    "Champions Field (Gridiron + Night)" : "BB_P",
+    "Champions Field (NFL)" : "BB_P",
     "Mannfield (Snowy)" : "eurostadium_snownight_P",
     "Farmstead" : "farm_P",
     "Neon Fields" : "music_P",
