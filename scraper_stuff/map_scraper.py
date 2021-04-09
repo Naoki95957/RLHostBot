@@ -130,6 +130,7 @@ def main():
                         map_index[file]['title'] = results[0]
                         map_index[file]['author'] = results[1]
                         map_index[file]['description'] = results[2]
+                        map_index[file]['source'] = (WORKSHOP_URL + os.path.basename(root))
                         counter += 1
                         print(counter, "maps compete")
                     else: 

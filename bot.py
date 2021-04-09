@@ -696,6 +696,9 @@ class HostingBot(discord.Client):
                 title = self.master_map_list[file_name]['title']
                 author = self.master_map_list[file_name]['author']
                 description = self.master_map_list[file_name]['description']
+                source = ""
+                if 'source' in self.master_map_list[file_name]:
+                    source = "***Info from: <{0}>***\n".format(self.master_map_list[file_name]["source"])
                 if swap:
                     cooked = os.path.join(self.rl_path, RL_PC_CONSOLE)
                     shutil.copy(file_path, os.path.join(cooked, "Labs_Underpass_P.upk"))
@@ -715,7 +718,7 @@ class HostingBot(discord.Client):
                 message_str = ( header +
                     "**" + title + "**\n" +
                     "**By: " + author + "**\n" + 
-                    "*file: " + file_name + "*\n\n" + description)
+                    "*file: " + file_name + "*\n" + source +"\n" + description)
                 message = await message.edit(content=message_str)
             else:
                 message_str = ("Map sent to game. I have no info on the map however:\n"
