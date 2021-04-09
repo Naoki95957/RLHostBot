@@ -908,6 +908,7 @@ class HostingBot(discord.Client):
             await message.channel.send(embed=embed_var)
         except Exception as e:
             await message.channel.send("Sorry, I couldn't find the maps :(")
+    
     async def remove_permit_command(self, message: discord.Message):
         cont = str(message.content)
         try:
@@ -1247,14 +1248,15 @@ class HostingBot(discord.Client):
             for file in files:
                 if file.endswith(MAP_EXTENSION_TYPE):
                     if self.master_map_list:
-                        list_name = self.master_map_list[file]['title']
-                        iteration = 0
+                        list_name = None
+                        if file in self.master_map_list:
+                            list_name = self.master_map_list[file]['title']
                         if (
                                 list_name in map_index.keys() and
                                 os.path.getsize(map_index[list_name]) == os.path.getsize(os.path.join(root, file))
                             ):
                             continue
-                        while (list_name in map_index.keys()):
+                        while list_name and (list_name in map_index.keys()):
                             list_name = "z-" + os.path.basename(root) + "/" + file
                         map_index[list_name] = os.path.join(root, file)
                     else:
