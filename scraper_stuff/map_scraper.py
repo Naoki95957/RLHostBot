@@ -81,11 +81,20 @@ class WebThingy:
             else:
                 a.replace_with(a.get_text() + ": <" + self.clean_url(a['href']) + ">")
         for b in description_element.findAll('b'):
-            b.replace_with("**" + b.get_text() + "**")
+            if b.get_text():
+                b.replace_with("**" + b.get_text() + "**")
+            else:
+                b = None
         for u in description_element.findAll('u'):
-            u.replace_with("__" + u.get_text() + "__")
+            if u.get_text():
+                u.replace_with("__" + u.get_text() + "__")
+            else: 
+                u = None
         for i in description_element.findAll('i'):
-            i.replace_with("*" + i.get_text() + "*")
+            if i.get_text():
+                i.replace_with("*" + i.get_text() + "*")
+            else:
+                i = None
         author = clean_str(author_element.contents[0])
         title = clean_str(title_element.contents[0])
         desc = description_element.get_text('\n')
