@@ -251,6 +251,7 @@ DEFAULT_MAPS = {
     "DFH Stadium (Stormy)" : "Stadium_Foggy_P",
     "DFH Stadium" : "Stadium_P",
     "DFH Stadium (Snowy)" : "Stadium_Winter_P",
+    "DFH Stadium (Race Day)" : "Stadium_Race_Day_P"
     "Urban Central (Dawn)" : "TrainStation_Dawn_P",
     "Urban Central (Night)" : "TrainStation_Night_P",
     "Urban Central" : "TrainStation_P",
