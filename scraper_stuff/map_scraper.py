@@ -75,7 +75,7 @@ class WebThingy:
         for a in description_element.findAll('a'):
             # if the hyperlink is literally like this:
             # <a href='something.com'>something.com</a>
-            if a.get_text() == a['href']:
+            if self.clean_url(a.get_text()) == self.clean_url(a['href']):
                 a.replace_with("<" + self.clean_url(a.get_text()) + ">")
             # otherwise get the hyperink
             else:
