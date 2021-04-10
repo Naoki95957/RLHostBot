@@ -915,7 +915,7 @@ class HostingBot(discord.Client):
     async def remove_permit_command(self, message: discord.Message):
         cont = str(message.content)
         try:
-            role_id = int(cont.replace(self.base_command + ' remove ', ''))
+            role_id = int(cont.replace(self.base_command + ' demote ', ''))
             self.permitted_roles.pop(self.permitted_roles.index(role_id))
             await message.channel.send("I will no longer listen to the " + self.get_role(role_id).name +" role")
         except Exception as e:
