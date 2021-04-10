@@ -604,7 +604,7 @@ class HostingBot(discord.Client):
                     elif self.is_admin_locked() and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
-                        await self.attempt_to_host(message.channel)
+                        await self.attempt_to_host(message.channel, bypass=self.has_permission(message))
                 # sends map (full path) to rl
                 elif argv[1] == 'mapd':
                     if self.has_permission(message):
