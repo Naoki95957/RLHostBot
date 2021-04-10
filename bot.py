@@ -422,7 +422,7 @@ class HostingBot(discord.Client):
                 # allows user to add roles that bot will listen to
                 elif argv[1] == 'permit':
                     if self.has_permission(message):
-                        await self.set_permit_command(message)
+                        await self.set_permit_command(argv, message)
                     else:
                         await self.permission_failure(message)
                 # add channel for bot to listen to
@@ -470,7 +470,7 @@ class HostingBot(discord.Client):
                 # removes a role from permissions
                 elif argv[1] == 'demote':
                     if self.has_permission(message):
-                        await self.remove_permit_command(message)
+                        await self.remove_permit_command(argv, message)
                     else:
                         await self.permission_failure(message)
                 # attach scoreboard to the channel it's called on
@@ -912,10 +912,16 @@ class HostingBot(discord.Client):
         except Exception as e:
             await message.channel.send("Sorry, I couldn't find the maps :(")
     
-    async def remove_permit_command(self, message: discord.Message):
-        cont = str(message.content)
+    async def remove_permit_command(self, argv: list, message: discord.Message):
+        """
+        Removes role from list of permitted roles
+
+        Args:
+            argv (list of str): gets args, only needs argv[2] for role
+            message (discord.Message): used to sendback
+        """
         try:
-            role_id = int(cont.replace(self.base_command + ' demote ', ''))
+            role_id = int(argv[2])
             self.permitted_roles.pop(self.permitted_roles.index(role_id))
             await message.channel.send("I will no longer listen to the " + self.get_role(role_id).name +" role")
         except Exception as e:
@@ -952,15 +958,16 @@ class HostingBot(discord.Client):
             self.print("Command failed")
             self.print(e)
 
-    async def set_permit_command(self, message: discord.Message):
+    async def set_permit_command(self, argv: list, message: discord.Message):
         """
         Adds a role to permitted roles
 
         Args:
+            argv (list of str): gets args, only needs argv[2] for role
             message (discord.Message): used to sendback
         """
         try:
-            role_id = int(str(message.content).replace(self.base_command + ' permit ', ''))
+            role_id = int(argv[2])
             self.permitted_roles.append(role_id)
             await message.channel.send("I will listen to the " + self.get_role(role_id).name +" role when they command me to :)")
         except Exception as e:
