@@ -399,6 +399,10 @@ class HostingBot(discord.Client):
     async def on_message(self, message: discord.message.Message):
         if message.author.id == self.bot_id or self.base_command not in str(message.content):
             return
+        if isinstance(message.channel, discord.DMChannel):
+            if self.base_command in str(message.content):
+                await message.channel.send("I only listen from the server.")
+            return
         try:
            await self.handle_command(self.tokenize(message.content), message)
         except Exception as e:
@@ -544,6 +548,7 @@ class HostingBot(discord.Client):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         try:
+                            await self.clear_active_messages()
                             await self.handle_mutators(argv, message.channel)
                         except Exception as e:
                             # exceptions will be printed based on code logic, no need for it here
@@ -745,6 +750,11 @@ class HostingBot(discord.Client):
             
 
     async def handle_mutators(self, argv: list, channel: discord.TextChannel):
+        """
+        helper function that manages mutator selection
+
+        If argv is incomplete, it'll walk the user thru it
+        """
         SUCCESS_MESSAGE = (
             "Sent mutator to game. If you wish to send " + 
             "another you can react with the " + REPEAT_MUTATOR_EMOTE + " emote")
