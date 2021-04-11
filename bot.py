@@ -397,7 +397,7 @@ class HostingBot(discord.Client):
         await HostingBot.change_presence(self, activity=discord.Activity(type=discord.ActivityType.listening, name="others play Rocket League"))
 
     async def on_message(self, message: discord.message.Message):
-        if message.author.id == self.bot_id or self.base_command not in str(message.content):
+        if message.author.id == int(self.bot_id) or self.base_command not in str(message.content):
             return
         if isinstance(message.channel, discord.DMChannel):
             if self.base_command in str(message.content):
