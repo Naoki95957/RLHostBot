@@ -124,10 +124,17 @@ def main():
                             # be aware that you'll have to deal with these scenarios
                             # (you can choose to find the info urself, delete the map, etc)
                             # before you can run this again
+                            # this comes up if a map file existed but is now removed from steam workshop
                             print("DROPPED STEAM MAP -> " + os.path.basename(root))
                             os.rename(os.path.join(root, file), os.path.join(root, file + "(ERROR).txt"))
                             counter += 1
                             continue
+                        map_index[file]['title'] = results[0]
+                        map_index[file]['author'] = results[1]
+                        map_index[file]['description'] = results[2]
+                        map_index[file]['source'] = (WORKSHOP_URL + os.path.basename(root))
+                        file = file.replace(".udk", ".upk")
+                        map_index[file] = {}
                         map_index[file]['title'] = results[0]
                         map_index[file]['author'] = results[1]
                         map_index[file]['description'] = results[2]
@@ -143,6 +150,12 @@ def main():
                         map_index[file]['title'] = title
                         map_index[file]['author'] = author
                         map_index[file]['description'] = description
+                        file = file.replace(".udk", ".upk")
+                        map_index[file] = {}
+                        map_index[file]['title'] = results[0]
+                        map_index[file]['author'] = results[1]
+                        map_index[file]['description'] = results[2]
+                        map_index[file]['source'] = (WORKSHOP_URL + os.path.basename(root))
                         counter += 1
                         print(counter, "maps compete")
     json_str = json.dumps(map_index)
