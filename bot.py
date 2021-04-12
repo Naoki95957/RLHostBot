@@ -63,8 +63,9 @@ MUTATOR_MESSAGES = 2
 # This is also kind of arbitrary since it depends on fast you load the game
 GAME_LOAD_TIME = 20
 
-# I'm adding this since it would appear that some use strictly upk files.
-MAP_EXTENSION_TYPE = ".udk"
+# I'm adding support for both udk and upk files. 
+# Hosting with either doesn't appear to matter; so may as well take them both
+# MAP_EXTENSION_TYPE = ".udk"
 
 # TODO Move the into a JSON maybe?
 # "Mutator" : : {"emote" : ":emoji:", "values" : ["value0", "value1", ...], "val_names" : ["<meaning>", ...]}
@@ -713,7 +714,7 @@ class HostingBot(discord.Client):
                 for val in DEFAULT_MAPS.values():
                     if arg.lower() == val.lower():
                         await self.attempt_to_sendRL("rp mapd " + val)
-                        await message.channel.send("Sent map " + map_name + " to the game.")
+                        message = await message.edit(content=("Sent map " + map_name + " to the game."))
                         if swap:
                             await message.channel.send(
                                 "I just loaded the map normally.\n" + 
@@ -734,8 +735,10 @@ class HostingBot(discord.Client):
                     cooked = os.path.join(self.rl_path, RL_PC_CONSOLE)
                     shutil.copy(file_path, os.path.join(cooked, "Labs_Underpass_P.upk"))
                     await self.attempt_to_sendRL('rp mapd Labs_Underpass_P')
-                else: 
-                    await self.attempt_to_sendRL('rp map ' + file_name.replace(MAP_EXTENSION_TYPE, ""))
+                else:
+                    basename = file_name.replace(".udk", "")
+                    basename = basename.replace(".upk", "")
+                    await self.attempt_to_sendRL('rp map ' + basename)
                 embed_counter = 0
                 matches = re.findall(self.url_pattern, description)
                 for i in range(0, len(matches)):
@@ -1292,7 +1295,7 @@ class HostingBot(discord.Client):
         # subprocess.Popen([sys.executable, "./map_scraper.py"])
         for root, dirs, files in os.walk(self.custom_path):
             for file in files:
-                if file.endswith(MAP_EXTENSION_TYPE):
+                if file.endswith(".udk") or file.endswith(".upk"):
                     if self.master_map_list:
                         list_name = file
                         if file in self.master_map_list:
@@ -1390,19 +1393,22 @@ class HostingBot(discord.Client):
             self.idle_counter = 0
         # updated the host request if it's found and a match is online
         if self.match_request_message and self.match_data:
-            pass_str = ""
-            ip_addr = ""
-            if not self.ip_address:
-                ip_addr = "ask admin where to connect"
+            if self.admin_locked:
+                await self.match_request_message.edit(content="Match is online! Details are locked right now.")
             else:
-                ip_addr = self.ip_address
-            if self.game_password:
-                pass_str = "Pass: ||" + self.game_password + "||"
-            await self.match_request_message.edit(
-                content = "Match is online!\n" +
-                    "IP: ||" + ip_addr + "||\n" +
-                    pass_str
-            )
+                pass_str = ""
+                ip_addr = ""
+                if not self.ip_address:
+                    ip_addr = "ask admin where to connect"
+                else:
+                    ip_addr = self.ip_address
+                if self.game_password:
+                    pass_str = "Pass: ||" + self.game_password + "||"
+                await self.match_request_message.edit(
+                    content = "Match is online!\n" +
+                        "IP: ||" + ip_addr + "||\n" +
+                        pass_str
+                )
             self.match_request_message = None
         # scoreboard stuff
         if not self.binded_message:
