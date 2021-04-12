@@ -77,7 +77,7 @@ class WebThingy:
             # <a href='something.com'>something.com</a>
             if self.clean_url(a.get_text()) == self.clean_url(a['href']):
                 a.replace_with("<" + self.clean_url(a.get_text()) + ">")
-            # otherwise get the hyperink
+            # otherwise get the text and hyperink
             else:
                 a.replace_with(a.get_text() + ": <" + self.clean_url(a['href']) + ">")
         for b in description_element.findAll('b'):
@@ -98,6 +98,7 @@ class WebThingy:
         author = clean_str(author_element.contents[0])
         title = clean_str(title_element.contents[0])
         desc = description_element.get_text('\n')
+        desc = desc.replace("~~", "")
         return (title, author, desc)
 
 def main():

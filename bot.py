@@ -278,6 +278,22 @@ DEFAULT_MAPS = {
     "Wasteland" : "wasteland_s_P"
 }
 
+# List of presests here so that the bot can help account for case sensitivty
+# TODO refactor this to access the cfg files and handle presets there
+PRESETS = [
+    "Default",
+    "Beach Ball",
+    "Boomer Ball",
+    "Cubic",
+    "Demolition",
+    "Ghost Hunt",
+    "Inverted Ball",
+    "Moon Ball",
+    "Snow Day",
+    "Spike Rush",
+    "Time Warp",
+]
+
 # no mutators take more than 9 so 12 should be enough for now
 # these will be the 'options' for the values on a given mutator
 EMOTE_OPTIONS = [
@@ -287,8 +303,8 @@ EMOTE_OPTIONS = [
     '🇬', '🇭',
     '🇮', '🇯',
     '🇰', '🇱'
-
 ]
+
 VOTE_TO_PASS_EMOTE = "🗳️"
 REPEAT_MUTATOR_EMOTE = "🔁"
 
@@ -296,7 +312,7 @@ REPEAT_MUTATOR_EMOTE = "🔁"
 # "file.udk" : {"title":"my custom map", "author":"by me", "description":"don't use plz"}
 MAP_LIST = "./map_info.json"
 
-URL_REGEX = r"\<.*?\>"
+URL_REGEX = r"<[a-zA-Z]+:.*?>"
 
 STR_COMMAND_PATTERN = "\'.*?\'|\".*?\"|\(.*?\)|[a-zA-Z\d\_\*\-\\\+\/\[\]\?\!\@\#\$\%\&\=\~\`]+"
 
@@ -554,6 +570,7 @@ class HostingBot(discord.Client):
                             # exceptions will be printed based on code logic, no need for it here
                             pass 
                 # preset passing
+                # TODO eventually this will be like the mutator selection
                 elif argv[1] == 'preset':
                     if not self.companion_plugin_connected:
                         await message.channel.send("RL is not running")
@@ -561,8 +578,17 @@ class HostingBot(discord.Client):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         try:
-                            await self.attempt_to_sendRL("rp preset " + argv[2])
-                            await message.channel.send("Sent preset to game")
+                            understood = False
+                            for preset in PRESETS:
+                                if argv[2].replace("\"", "").lower() == preset.lower():
+                                    argv[2] = "\"" + preset + "\""
+                                    understood = True
+                                    break
+                            if understood:
+                                await self.attempt_to_sendRL("rp preset " + argv[2])
+                                await message.channel.send("Sent preset to game")
+                            else:
+                                await message.channel.send("Sorry, I couldn't find that preset")
                         except Exception as e:
                             await message.channel.send("Sorry I didn't understand that")
                 # selects the map and send it to rl
