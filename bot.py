@@ -1294,7 +1294,7 @@ class HostingBot(discord.Client):
             for file in files:
                 if file.endswith(MAP_EXTENSION_TYPE):
                     if self.master_map_list:
-                        list_name = None
+                        list_name = file
                         if file in self.master_map_list:
                             list_name = self.master_map_list[file]['title']
                         if (
