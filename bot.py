@@ -315,7 +315,7 @@ MAP_LIST = "./map_info.json"
 
 URL_REGEX = r"<[a-zA-Z]+:.*?>"
 
-STR_COMMAND_PATTERN = "\'.*?\'|\".*?\"|\(.*?\)|[a-zA-Z\d\_\*\-\\\+\/\[\]\?\!\@\#\$\%\&\=\~\`]+"
+STR_COMMAND_PATTERN = r"\'.*?\'|\".*?\"|\(.*?\)|[a-zA-Z\d\_\*\-\\\+\/\[\]\?\!\@\#\$\%\&\=\~\`]+"
 
 RL_EXECUTABLE = "./Binaries/Win64/RocketLeague.exe"
 
