@@ -753,6 +753,8 @@ class HostingBot(discord.Client):
                     "**" + title + "**\n" +
                     "**By: " + author + "**\n" + 
                     "*file: " + file_name + "*\n" + source +"\n" + description)
+                if len(message_str) > 2000:
+                    message_str = message_str[0:1997] + "..."
                 message = await message.edit(content=message_str)
             else:
                 message_str = ("Map sent to game. I have no info on the map however:\n"
