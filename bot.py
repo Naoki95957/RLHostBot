@@ -93,7 +93,7 @@ MUTATORS = {
         "alt_name" : "Max Score",
         "emote" : "🗜️",
         "values" : ["Default", "Max1", "Max3", "Max5", "Max7", "UnlimitedScore"],
-        "val_names" : ["Default", "1 Goal", "3 Goals", "5 Goals", "7 Goals"],
+        "val_names" : ["Default", "1 Goal", "3 Goals", "5 Goals", "7 Goals", "Unlimited"],
     },
     "OvertimeRules" : {
         "alt_name" : "Overtime",
