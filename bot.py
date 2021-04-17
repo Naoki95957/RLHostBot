@@ -93,7 +93,7 @@ MUTATORS = {
         "alt_name" : "Max Score",
         "emote" : "🗜️",
         "values" : ["Default", "Max1", "Max3", "Max5", "Max7", "UnlimitedScore"],
-        "val_names" : ["Default", "1 Goal", "3 Goals", "5 Goals", "7 Goals"],
+        "val_names" : ["Default", "1 Goal", "3 Goals", "5 Goals", "7 Goals", "Unlimited"],
     },
     "OvertimeRules" : {
         "alt_name" : "Overtime",
@@ -753,6 +753,8 @@ class HostingBot(discord.Client):
                     "**" + title + "**\n" +
                     "**By: " + author + "**\n" + 
                     "*file: " + file_name + "*\n" + source +"\n" + description)
+                if len(message_str) > 2000:
+                    message_str = message_str[0:1997] + "..."
                 message = await message.edit(content=message_str)
             else:
                 message_str = ("Map sent to game. I have no info on the map however:\n"
@@ -1300,12 +1302,14 @@ class HostingBot(discord.Client):
                         list_name = file
                         if file in self.master_map_list:
                             list_name = self.master_map_list[file]['title']
+                        else:
+                            list_name = "z-" + os.path.basename(root) + "/" + file
                         if (
                                 list_name in map_index.keys() and
                                 os.path.getsize(map_index[list_name]) == os.path.getsize(os.path.join(root, file))
                             ):
                             continue
-                        while list_name and (list_name in map_index.keys()):
+                        if list_name in map_index.keys():
                             list_name = "z-" + os.path.basename(root) + "/" + file
                         map_index[list_name] = os.path.join(root, file)
                     else:
