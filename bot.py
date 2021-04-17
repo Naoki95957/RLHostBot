@@ -1302,12 +1302,14 @@ class HostingBot(discord.Client):
                         list_name = file
                         if file in self.master_map_list:
                             list_name = self.master_map_list[file]['title']
+                        else:
+                            list_name = "z-" + os.path.basename(root) + "/" + file
                         if (
                                 list_name in map_index.keys() and
                                 os.path.getsize(map_index[list_name]) == os.path.getsize(os.path.join(root, file))
                             ):
                             continue
-                        while list_name and (list_name in map_index.keys()):
+                        if list_name in map_index.keys():
                             list_name = "z-" + os.path.basename(root) + "/" + file
                         map_index[list_name] = os.path.join(root, file)
                     else:
