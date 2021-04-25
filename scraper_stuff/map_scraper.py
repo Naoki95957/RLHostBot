@@ -32,7 +32,7 @@ import json
 #   LethBeachBrawl.udk
 
 WORKSHOP_URL = "https://steamcommunity.com/sharedfiles/filedetails/?id="
-CHROME_DRIVER = './win_chromedriver89.exe'
+CHROME_DRIVER = './win_chromedriver90.exe'
 
 class WebThingy:
     my_url = ''
