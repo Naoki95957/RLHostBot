@@ -109,7 +109,7 @@ def main():
     scraper = None
     for root, dirs, files in os.walk(rl_dir):
         for file in files:
-            if file.endswith('.udk'):
+            if file.endswith('.udk') or file.endswith('.upk'):
                 if file not in map_index:
                     map_index[file] = {}
                     # steam maps
@@ -155,7 +155,6 @@ def main():
                         map_index[file]['title'] = results[0]
                         map_index[file]['author'] = results[1]
                         map_index[file]['description'] = results[2]
-                        map_index[file]['source'] = (WORKSHOP_URL + os.path.basename(root))
                         counter += 1
                         print(counter, "maps compete")
     json_str = json.dumps(map_index)
