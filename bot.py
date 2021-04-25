@@ -273,6 +273,7 @@ DEFAULT_MAPS = {
     "Farmstead" : "farm_P",
     "Neon Fields" : "music_P",
     "DFH Stadium (Day)" : "stadium_day_P",
+    "DFH Stadium (Circuit)" : "stadium_race_day_P",
     "Throwback Stadium (Snowy)" : "throwbackhockey_P",
     "Throwback Stadium" : "throwbackstadium_P",
     "Wasteland (Night)" : "wasteland_Night_S_P",
@@ -394,6 +395,7 @@ class HostingBot(discord.Client):
         self.master_map_list = json.load(open(MAP_LIST))
 
     def initialize(self):
+        self.last_save_dict = self.get_bot_info()
         Thread(target=self.__background_loop).start()
         Thread(target=self.between_plugin_callback).start()
         self.index_custom_maps()
