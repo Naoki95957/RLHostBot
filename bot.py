@@ -346,6 +346,7 @@ class HostingBot(discord.Client):
     master_map_list = None
     members_list = None
     bot_file_path = None
+    last_save_dict = None
 
     # bot/match global stuff
     active_mutator_messages = []
@@ -1610,11 +1611,13 @@ class HostingBot(discord.Client):
         Helper that saves a file so that some previous commands can be loaded
         """
         dictionary = self.get_bot_info()
-        pickle.dump(dictionary, open(self.file, 'wb'))
-        if self.print_statements:
-            print("File saved")
-            pprint(dictionary)
-    
+        if dictionary != self.last_save_dict:
+            self.last_save_dict = copy.deepcopy(dictionary)
+            pickle.dump(dictionary, open(self.file, 'wb'))
+            if self.print_statements:
+                print("File saved")
+                pprint(dictionary)
+        
     def get_bot_info(self) -> dict:
         """
         Helper used to get data prepped for serialization
