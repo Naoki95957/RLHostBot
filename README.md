@@ -1,8 +1,8 @@
 # RLHostBot
 
 ### A python based discord bot that in tandom with rocket league and some mods will allow on demand hosting for your copy of the game on a machine. 
-
-The idea is that you have another computer or server with a copy of rocket league, bakkes and some plugins installed, and then this bot running with your discord token and information.
+#### not at all a short title lol
+The idea is that you have another computer or server with a copy of rocket league, bakkes and some plugins installed, and then this bot running with your discord token and information. This copy of the game will host matches for you instead of needing to it on your copy. 
 
 
 ## Installation

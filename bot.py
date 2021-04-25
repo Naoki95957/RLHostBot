@@ -63,8 +63,9 @@ MUTATOR_MESSAGES = 2
 # This is also kind of arbitrary since it depends on fast you load the game
 GAME_LOAD_TIME = 20
 
-# I'm adding this since it would appear that some use strictly upk files.
-MAP_EXTENSION_TYPE = ".udk"
+# I'm adding support for both udk and upk files. 
+# Hosting with either doesn't appear to matter; so may as well take them both
+# MAP_EXTENSION_TYPE = ".udk"
 
 # TODO Move the into a JSON maybe?
 # "Mutator" : : {"emote" : ":emoji:", "values" : ["value0", "value1", ...], "val_names" : ["<meaning>", ...]}
@@ -92,7 +93,7 @@ MUTATORS = {
         "alt_name" : "Max Score",
         "emote" : "🗜️",
         "values" : ["Default", "Max1", "Max3", "Max5", "Max7", "UnlimitedScore"],
-        "val_names" : ["Default", "1 Goal", "3 Goals", "5 Goals", "7 Goals"],
+        "val_names" : ["Default", "1 Goal", "3 Goals", "5 Goals", "7 Goals", "Unlimited"],
     },
     "OvertimeRules" : {
         "alt_name" : "Overtime",
@@ -278,6 +279,22 @@ DEFAULT_MAPS = {
     "Wasteland" : "wasteland_s_P"
 }
 
+# List of presests here so that the bot can help account for case sensitivty
+# TODO refactor this to access the cfg files and handle presets there
+PRESETS = [
+    "Default",
+    "Beach Ball",
+    "Boomer Ball",
+    "Cubic",
+    "Demolition",
+    "Ghost Hunt",
+    "Inverted Ball",
+    "Moon Ball",
+    "Snow Day",
+    "Spike Rush",
+    "Time Warp",
+]
+
 # no mutators take more than 9 so 12 should be enough for now
 # these will be the 'options' for the values on a given mutator
 EMOTE_OPTIONS = [
@@ -287,8 +304,8 @@ EMOTE_OPTIONS = [
     '🇬', '🇭',
     '🇮', '🇯',
     '🇰', '🇱'
-
 ]
+
 VOTE_TO_PASS_EMOTE = "🗳️"
 REPEAT_MUTATOR_EMOTE = "🔁"
 
@@ -296,9 +313,9 @@ REPEAT_MUTATOR_EMOTE = "🔁"
 # "file.udk" : {"title":"my custom map", "author":"by me", "description":"don't use plz"}
 MAP_LIST = "./map_info.json"
 
-URL_REGEX = r"\<.*?\>"
+URL_REGEX = r"<[a-zA-Z]+:.*?>"
 
-STR_COMMAND_PATTERN = "\'.*?\'|\".*?\"|\(.*?\)|[a-zA-Z\d\_\*\-\\\+\/\[\]\?\!\@\#\$\%\&\=\~\`]+"
+STR_COMMAND_PATTERN = r"(\".*?\")|[^\s]+"
 
 RL_EXECUTABLE = "./Binaries/Win64/RocketLeague.exe"
 
@@ -397,7 +414,11 @@ class HostingBot(discord.Client):
         await HostingBot.change_presence(self, activity=discord.Activity(type=discord.ActivityType.listening, name="others play Rocket League"))
 
     async def on_message(self, message: discord.message.Message):
-        if message.author.id == self.bot_id or self.base_command not in str(message.content):
+        if message.author.id == int(self.bot_id) or self.base_command not in str(message.content):
+            return
+        if isinstance(message.channel, discord.DMChannel):
+            if self.base_command in str(message.content):
+                await message.channel.send("I only listen from the server.")
             return
         try:
            await self.handle_command(self.tokenize(message.content), message)
@@ -422,7 +443,7 @@ class HostingBot(discord.Client):
                 # allows user to add roles that bot will listen to
                 elif argv[1] == 'permit':
                     if self.has_permission(message):
-                        await self.set_permit_command(message)
+                        await self.set_permit_command(argv, message)
                     else:
                         await self.permission_failure(message)
                 # add channel for bot to listen to
@@ -470,7 +491,7 @@ class HostingBot(discord.Client):
                 # removes a role from permissions
                 elif argv[1] == 'demote':
                     if self.has_permission(message):
-                        await self.remove_permit_command(message)
+                        await self.remove_permit_command(argv, message)
                     else:
                         await self.permission_failure(message)
                 # attach scoreboard to the channel it's called on
@@ -544,11 +565,13 @@ class HostingBot(discord.Client):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         try:
+                            await self.clear_active_messages()
                             await self.handle_mutators(argv, message.channel)
                         except Exception as e:
                             # exceptions will be printed based on code logic, no need for it here
                             pass 
                 # preset passing
+                # TODO eventually this will be like the mutator selection
                 elif argv[1] == 'preset':
                     if not self.companion_plugin_connected:
                         await message.channel.send("RL is not running")
@@ -556,8 +579,17 @@ class HostingBot(discord.Client):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
                         try:
-                            await self.attempt_to_sendRL("rp preset " + argv[2])
-                            await message.channel.send("Sent preset to game")
+                            understood = False
+                            for preset in PRESETS:
+                                if argv[2].replace("\"", "").lower() == preset.lower():
+                                    argv[2] = "\"" + preset + "\""
+                                    understood = True
+                                    break
+                            if understood:
+                                await self.attempt_to_sendRL("rp preset " + argv[2])
+                                await message.channel.send("Sent preset to game")
+                            else:
+                                await message.channel.send("Sorry, I couldn't find that preset")
                         except Exception as e:
                             await message.channel.send("Sorry I didn't understand that")
                 # selects the map and send it to rl
@@ -604,7 +636,7 @@ class HostingBot(discord.Client):
                     elif self.is_admin_locked() and not self.has_permission(message):
                         await message.channel.send("Sorry, the commands are locked right now")
                     else:
-                        await self.attempt_to_host(message.channel)
+                        await self.attempt_to_host(message.channel, bypass=self.has_permission(message))
                 # sends map (full path) to rl
                 elif argv[1] == 'mapd':
                     if self.has_permission(message):
@@ -682,7 +714,7 @@ class HostingBot(discord.Client):
                 for val in DEFAULT_MAPS.values():
                     if arg.lower() == val.lower():
                         await self.attempt_to_sendRL("rp mapd " + val)
-                        await message.channel.send("Sent map " + map_name + " to the game.")
+                        message = await message.edit(content=("Sent map " + map_name + " to the game."))
                         if swap:
                             await message.channel.send(
                                 "I just loaded the map normally.\n" + 
@@ -696,12 +728,17 @@ class HostingBot(discord.Client):
                 title = self.master_map_list[file_name]['title']
                 author = self.master_map_list[file_name]['author']
                 description = self.master_map_list[file_name]['description']
+                source = ""
+                if 'source' in self.master_map_list[file_name]:
+                    source = "***Info from: <{0}>***\n".format(self.master_map_list[file_name]["source"])
                 if swap:
                     cooked = os.path.join(self.rl_path, RL_PC_CONSOLE)
                     shutil.copy(file_path, os.path.join(cooked, "Labs_Underpass_P.upk"))
                     await self.attempt_to_sendRL('rp mapd Labs_Underpass_P')
-                else: 
-                    await self.attempt_to_sendRL('rp map ' + file_name.replace(MAP_EXTENSION_TYPE, ""))
+                else:
+                    basename = file_name.replace(".udk", "")
+                    basename = basename.replace(".upk", "")
+                    await self.attempt_to_sendRL('rp map ' + basename)
                 embed_counter = 0
                 matches = re.findall(self.url_pattern, description)
                 for i in range(0, len(matches)):
@@ -715,7 +752,9 @@ class HostingBot(discord.Client):
                 message_str = ( header +
                     "**" + title + "**\n" +
                     "**By: " + author + "**\n" + 
-                    "*file: " + file_name + "*\n\n" + description)
+                    "*file: " + file_name + "*\n" + source +"\n" + description)
+                if len(message_str) > 2000:
+                    message_str = message_str[0:1997] + "..."
                 message = await message.edit(content=message_str)
             else:
                 message_str = ("Map sent to game. I have no info on the map however:\n"
@@ -742,6 +781,11 @@ class HostingBot(discord.Client):
             
 
     async def handle_mutators(self, argv: list, channel: discord.TextChannel):
+        """
+        helper function that manages mutator selection
+
+        If argv is incomplete, it'll walk the user thru it
+        """
         SUCCESS_MESSAGE = (
             "Sent mutator to game. If you wish to send " + 
             "another you can react with the " + REPEAT_MUTATOR_EMOTE + " emote")
@@ -909,10 +953,16 @@ class HostingBot(discord.Client):
         except Exception as e:
             await message.channel.send("Sorry, I couldn't find the maps :(")
     
-    async def remove_permit_command(self, message: discord.Message):
-        cont = str(message.content)
+    async def remove_permit_command(self, argv: list, message: discord.Message):
+        """
+        Removes role from list of permitted roles
+
+        Args:
+            argv (list of str): gets args, only needs argv[2] for role
+            message (discord.Message): used to sendback
+        """
         try:
-            role_id = int(cont.replace(self.base_command + ' remove ', ''))
+            role_id = int(argv[2])
             self.permitted_roles.pop(self.permitted_roles.index(role_id))
             await message.channel.send("I will no longer listen to the " + self.get_role(role_id).name +" role")
         except Exception as e:
@@ -949,15 +999,16 @@ class HostingBot(discord.Client):
             self.print("Command failed")
             self.print(e)
 
-    async def set_permit_command(self, message: discord.Message):
+    async def set_permit_command(self, argv: list, message: discord.Message):
         """
         Adds a role to permitted roles
 
         Args:
+            argv (list of str): gets args, only needs argv[2] for role
             message (discord.Message): used to sendback
         """
         try:
-            role_id = int(str(message.content).replace(self.base_command + ' permit ', ''))
+            role_id = int(argv[2])
             self.permitted_roles.append(role_id)
             await message.channel.send("I will listen to the " + self.get_role(role_id).name +" role when they command me to :)")
         except Exception as e:
@@ -1246,17 +1297,19 @@ class HostingBot(discord.Client):
         # subprocess.Popen([sys.executable, "./map_scraper.py"])
         for root, dirs, files in os.walk(self.custom_path):
             for file in files:
-                if file.endswith(MAP_EXTENSION_TYPE):
+                if file.endswith(".udk") or file.endswith(".upk"):
                     if self.master_map_list:
-                        list_name = None
+                        list_name = file
                         if file in self.master_map_list:
                             list_name = self.master_map_list[file]['title']
+                        else:
+                            list_name = "z-" + os.path.basename(root) + "/" + file
                         if (
                                 list_name in map_index.keys() and
                                 os.path.getsize(map_index[list_name]) == os.path.getsize(os.path.join(root, file))
                             ):
                             continue
-                        while list_name and (list_name in map_index.keys()):
+                        if list_name in map_index.keys():
                             list_name = "z-" + os.path.basename(root) + "/" + file
                         map_index[list_name] = os.path.join(root, file)
                     else:
@@ -1344,19 +1397,22 @@ class HostingBot(discord.Client):
             self.idle_counter = 0
         # updated the host request if it's found and a match is online
         if self.match_request_message and self.match_data:
-            pass_str = ""
-            ip_addr = ""
-            if not self.ip_address:
-                ip_addr = "ask admin where to connect"
+            if self.admin_locked:
+                await self.match_request_message.edit(content="Match is online! Details are locked right now.")
             else:
-                ip_addr = self.ip_address
-            if self.game_password:
-                pass_str = "Pass: ||" + self.game_password + "||"
-            await self.match_request_message.edit(
-                content = "Match is online!\n" +
-                    "IP: ||" + ip_addr + "||\n" +
-                    pass_str
-            )
+                pass_str = ""
+                ip_addr = ""
+                if not self.ip_address:
+                    ip_addr = "ask admin where to connect"
+                else:
+                    ip_addr = self.ip_address
+                if self.game_password:
+                    pass_str = "Pass: ||" + self.game_password + "||"
+                await self.match_request_message.edit(
+                    content = "Match is online!\n" +
+                        "IP: ||" + ip_addr + "||\n" +
+                        pass_str
+                )
             self.match_request_message = None
         # scoreboard stuff
         if not self.binded_message:

@@ -75,9 +75,9 @@ class WebThingy:
         for a in description_element.findAll('a'):
             # if the hyperlink is literally like this:
             # <a href='something.com'>something.com</a>
-            if a.get_text() == a['href']:
+            if self.clean_url(a.get_text()) == self.clean_url(a['href']):
                 a.replace_with("<" + self.clean_url(a.get_text()) + ">")
-            # otherwise get the hyperink
+            # otherwise get the text and hyperink
             else:
                 a.replace_with(a.get_text() + ": <" + self.clean_url(a['href']) + ">")
         for b in description_element.findAll('b'):
@@ -98,6 +98,7 @@ class WebThingy:
         author = clean_str(author_element.contents[0])
         title = clean_str(title_element.contents[0])
         desc = description_element.get_text('\n')
+        desc = desc.replace("~~", "")
         return (title, author, desc)
 
 def main():
@@ -123,6 +124,7 @@ def main():
                             # be aware that you'll have to deal with these scenarios
                             # (you can choose to find the info urself, delete the map, etc)
                             # before you can run this again
+                            # this comes up if a map file existed but is now removed from steam workshop
                             print("DROPPED STEAM MAP -> " + os.path.basename(root))
                             os.rename(os.path.join(root, file), os.path.join(root, file + "(ERROR).txt"))
                             counter += 1
@@ -130,6 +132,13 @@ def main():
                         map_index[file]['title'] = results[0]
                         map_index[file]['author'] = results[1]
                         map_index[file]['description'] = results[2]
+                        map_index[file]['source'] = (WORKSHOP_URL + os.path.basename(root))
+                        file = file.replace(".udk", ".upk")
+                        map_index[file] = {}
+                        map_index[file]['title'] = results[0]
+                        map_index[file]['author'] = results[1]
+                        map_index[file]['description'] = results[2]
+                        map_index[file]['source'] = (WORKSHOP_URL + os.path.basename(root))
                         counter += 1
                         print(counter, "maps compete")
                     else: 
@@ -141,6 +150,12 @@ def main():
                         map_index[file]['title'] = title
                         map_index[file]['author'] = author
                         map_index[file]['description'] = description
+                        file = file.replace(".udk", ".upk")
+                        map_index[file] = {}
+                        map_index[file]['title'] = results[0]
+                        map_index[file]['author'] = results[1]
+                        map_index[file]['description'] = results[2]
+                        map_index[file]['source'] = (WORKSHOP_URL + os.path.basename(root))
                         counter += 1
                         print(counter, "maps compete")
     json_str = json.dumps(map_index)
