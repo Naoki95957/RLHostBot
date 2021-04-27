@@ -104,6 +104,8 @@ class WebThingy:
 def main():
     load_dotenv('./config.env')
     rl_dir = os.getenv("CUSTOM_PATH")
+    maps_list = []
+    map_dictionary = {"maps": maps_list}
     map_index = {}
     counter = 0
     scraper = None
@@ -133,6 +135,8 @@ def main():
                         map_index[file]['author'] = results[1]
                         map_index[file]['description'] = results[2]
                         map_index[file]['source'] = (WORKSHOP_URL + os.path.basename(root))
+                        if '.upk' in file:
+                            continue
                         file = file.replace(".udk", ".upk")
                         map_index[file] = {}
                         map_index[file]['title'] = results[0]
