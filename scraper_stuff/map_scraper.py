@@ -126,7 +126,7 @@ def main():
                             # before you can run this again
                             # this comes up if a map file existed but is now removed from steam workshop
                             print("DROPPED STEAM MAP -> " + os.path.basename(root))
-                            error_maps.append(root + "\\" + file)
+                            error_maps.append(root + "\\" + file + "\n")
                             counter += 1
                             continue
                         map_index[file] = {}
