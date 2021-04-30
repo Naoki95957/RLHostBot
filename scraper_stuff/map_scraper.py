@@ -104,16 +104,14 @@ class WebThingy:
 def main():
     load_dotenv('./config.env')
     rl_dir = os.getenv("CUSTOM_PATH")
-    maps_list = []
-    map_dictionary = {"maps": maps_list}
     map_index = {}
+    error_maps = []
     counter = 0
     scraper = None
     for root, dirs, files in os.walk(rl_dir):
         for file in files:
             if file.endswith('.udk') or file.endswith('.upk'):
                 if file not in map_index:
-                    map_index[file] = {}
                     # steam maps
                     if os.path.basename(root).isnumeric():
                         try:
@@ -128,9 +126,10 @@ def main():
                             # before you can run this again
                             # this comes up if a map file existed but is now removed from steam workshop
                             print("DROPPED STEAM MAP -> " + os.path.basename(root))
-                            os.rename(os.path.join(root, file), os.path.join(root, file + "(ERROR).txt"))
+                            error_maps.append(root + "\\" + file)
                             counter += 1
                             continue
+                        map_index[file] = {}
                         map_index[file]['title'] = results[0]
                         map_index[file]['author'] = results[1]
                         map_index[file]['description'] = results[2]
@@ -151,6 +150,7 @@ def main():
                         info = json.load(open(os.path.join(root, "info.json")))
                         author = info["author"]
                         description = info["desc"]
+                        map_index[file] = {}
                         map_index[file]['title'] = title
                         map_index[file]['author'] = author
                         map_index[file]['description'] = description
@@ -161,9 +161,41 @@ def main():
                         map_index[file]['description'] = results[2]
                         counter += 1
                         print(counter, "maps compete")
+    # merge existing map info:
+    # this merges and takes map_index if both exist (we assume this scrape is more up to date)
+    json_in_file = open('./map_info.json')
+    original_info = json.load(json_in_file)
+    json_in_file.close()
+    original_info.update(map_index)
+    map_index = original_info
+
+    # actual deserializable json
+    usable_json = {'maps':[]}
+    files = list(map_index.keys())
+    files.sort()
+    for file in files:
+        map_dict_obj = {}
+        map_line = map_index[file]
+        map_dict_obj['file'] = file
+        map_dict_obj['title'] = map_index[file]['title']
+        map_dict_obj['author'] = map_index[file]['author']
+        map_dict_obj['description'] = map_index[file]['description']
+        if 'source' in map_index[file]:
+            map_dict_obj['source'] = map_index[file]['source']
+        usable_json['maps'].append(map_dict_obj)
+
     json_str = json.dumps(map_index)
     file = open("./map_info.json", 'w')
     file.write(json_str)
+    file.close()
+
+    json_str = json.dumps(usable_json)
+    file = open("./serializable_map_info.json", 'w')
+    file.write(json_str)
+    file.close()
+    
+    file = open("./error_maps.txt", 'w')
+    file.writelines(error_maps)
     file.close()
     
 if __name__ == "__main__":
