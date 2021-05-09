@@ -1603,6 +1603,7 @@ class HostingBot(discord.Client):
                 if self.print_statements:
                     print('File loaded')
                     pprint(dictionary)
+                self.last_save_dict = self.get_bot_info()
         except Exception as e:
             if self.print_statements:
                 print("failed to load file :/")
