@@ -125,10 +125,24 @@ def main():
                             # (you can choose to find the info urself, delete the map, etc)
                             # before you can run this again
                             # this comes up if a map file existed but is now removed from steam workshop
-                            print("DROPPED STEAM MAP -> " + os.path.basename(root))
-                            error_maps.append(root + "\\" + file + "\n")
-                            counter += 1
-                            continue
+                            failure = True
+                            for i in range(1, 5):
+                                print("REATTEMPTING: ", i)
+                                try:
+                                    if scraper:
+                                        scraper.set_url(WORKSHOP_URL + os.path.basename(root))
+                                    else:
+                                        scraper = WebThingy(WORKSHOP_URL + os.path.basename(root))
+                                    results = scraper.start()
+                                    failure = False
+                                    break
+                                except Exception as e2:
+                                    failure = True
+                            if failure:
+                                print("DROPPED STEAM MAP -> " + os.path.basename(root))
+                                error_maps.append(root + "\\" + file + "\n")
+                                counter += 1
+                                continue
                         map_index[file] = {}
                         map_index[file]['title'] = results[0]
                         map_index[file]['author'] = results[1]
