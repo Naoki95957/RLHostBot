@@ -61,7 +61,7 @@ MUTATOR_MESSAGES = 2
 # This is used to let the bot know when is a safe time to call on rcon and bakkes
 # to start injecting.
 # This is also kind of arbitrary since it depends on fast you load the game
-GAME_LOAD_TIME = 20
+GAME_LOAD_TIME = 35
 
 # I'm adding support for both udk and upk files. 
 # Hosting with either doesn't appear to matter; so may as well take them both
@@ -557,6 +557,9 @@ class HostingBot(discord.Client):
                         time.sleep(1)
                         # binds rocket plugin path with our maps
                         await self.attempt_to_sendRL("rp_custom_path " + self.custom_path.replace("\\", "/"))
+                        time.sleep(1)
+                        # opens gui window bc sometimes it seems not work w/out it being open?
+                        await self.attempt_to_sendRL("togglemenu rocketplugin")
                         time.sleep(1)
                         self.reconnect = True
                         await message.edit(content="Done")
