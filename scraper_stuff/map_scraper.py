@@ -32,7 +32,7 @@ import json
 #   LethBeachBrawl.udk
 
 WORKSHOP_URL = "https://steamcommunity.com/sharedfiles/filedetails/?id="
-CHROME_DRIVER = './win_chromedriver90.exe'
+CHROME_DRIVER = './win_chromedriver97.exe'
 
 class WebThingy:
     my_url = ''
@@ -143,6 +143,8 @@ def main():
                                 error_maps.append(root + "\\" + file + "\n")
                                 counter += 1
                                 continue
+                        if not results:
+                            continue
                         map_index[file] = {}
                         map_index[file]['title'] = results[0]
                         map_index[file]['author'] = results[1]
